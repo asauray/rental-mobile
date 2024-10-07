@@ -1,60 +1,36 @@
-import { Button, Text, View } from "react-native";
-import {
-  Auth0Provider,
-  LocalAuthenticationLevel,
-  LocalAuthenticationOptions,
-  LocalAuthenticationStrategy,
-  useAuth0,
-} from "react-native-auth0";
+import React, { useState, useEffect } from "react";
+import { View, Text } from "react-native";
+import auth from "@react-native-firebase/auth";
 
-const localAuthOptions: LocalAuthenticationOptions = {
-  title: "Authenticate to retreive your credentials",
-  subtitle: "Please authenticate to continue",
-  description: "We need to authenticate you to retrieve your credentials",
-  cancelTitle: "Cancel",
-  evaluationPolicy: LocalAuthenticationStrategy.deviceOwnerWithBiometrics,
-  fallbackTitle: "Use Passcode",
-  authenticationLevel: LocalAuthenticationLevel.strong,
-  deviceCredentialFallback: true,
-};
-const config = {
-  domain: "sauray-prod.eu.auth0.com",
-  clientId: "BwsP8gtqDyiq26tuX9qGr5zqWjDMLcJW",
-};
-const App = () => {
-  const { authorize, user, isLoading, error } = useAuth0();
+function App() {
+  // Set an initializing state whilst Firebase connects
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState();
 
-  const login = async () => {
-    await authorize();
-  };
+  // Handle user state changes
+  function onAuthStateChanged(user) {
+    setUser(user);
+    if (initializing) setInitializing(false);
+  }
 
-  if (isLoading) {
+  useEffect(() => {
+    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+    return subscriber; // unsubscribe on unmount
+  }, []);
+
+  if (initializing) return null;
+
+  if (!user) {
     return (
       <View>
-        <Text>SDK is Loading</Text>
+        <Text>Login</Text>
       </View>
     );
   }
 
   return (
     <View>
-      {!user && <Button onPress={login} title="Log in" />}
-      {user && <Text>Logged in as {user.name}</Text>}
-      {error && <Text>{error.message}</Text>}
-    </View>
-  );
-};
-
-export default function Index() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <App />
+      <Text>Welcome {user.email}</Text>
     </View>
   );
 }
