@@ -1,36 +1,85 @@
 import React, { useState, useEffect } from "react";
-import { View, Text } from "react-native";
+import { StyleSheet, Button, View, Text, TextInput, Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import auth from "@react-native-firebase/auth";
+import dynamicLinks from "@react-native-firebase/dynamic-links";
 
-function App() {
-  // Set an initializing state whilst Firebase connects
-  const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState();
+export default function Index() {
+  const [email, setEmail] = useState("");
 
-  // Handle user state changes
-  function onAuthStateChanged(user) {
-    setUser(user);
-    if (initializing) setInitializing(false);
-  }
+  const BUNDLE_ID = "net.sauray.cowork";
 
-  useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-    return subscriber; // unsubscribe on unmount
-  }, []);
+  const sendSignInLink = async (email: string) => {
+    try {
+      await AsyncStorage.setItem("emailForSignIn", email);
+      await auth().sendSignInLinkToEmail(email, {
+        handleCodeInApp: true,
+        url: "https://cowork-booking-1354e.web.app",
+        iOS: {
+          bundleId: BUNDLE_ID,
+        },
+        android: {
+          packageName: BUNDLE_ID,
+        },
+      });
 
-  if (initializing) return null;
-
-  if (!user) {
-    return (
-      <View>
-        <Text>Login</Text>
-      </View>
-    );
-  }
+      Alert.alert(`Login link sent to ${email}`);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error sending login link");
+    }
+  };
 
   return (
-    <View>
-      <Text>Welcome {user.email}</Text>
+    <View style={styles.authContainer}>
+      <Text style={styles.sectionTitle}>Magic Link Sign In</Text>
+      <TextInput
+        style={styles.textInput}
+        value={email}
+        onChangeText={(text) => setEmail(text)}
+      />
+      <Button
+        color={"007AFF"}
+        title="Send login link"
+        onPress={() => sendSignInLink(email)}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  sectionContainer: {
+    paddingHorizontal: 24,
+    height: "100%",
+  },
+  authContainer: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  loadingContainer: {
+    backgroundColor: "rgba(250,250,250,0.33)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  textInput: {
+    borderColor: "blue",
+    borderWidth: 1,
+    marginTop: 16,
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 8,
+    fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+  },
+  sectionDescription: {
+    marginTop: 8,
+    fontSize: 18,
+    fontWeight: "400",
+  },
+  highlight: {
+    fontWeight: "700",
+  },
+});
