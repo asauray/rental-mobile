@@ -20,6 +20,8 @@ import Entypo from "@expo/vector-icons/Entypo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { ProductUnit, Rental, RentalApi, Reservations } from "./api/rental_api";
 import { H4, P } from "@/components/ui/typography";
+import { Skeleton } from "@/components/ui/skeleton";
+import AntDesign from "@expo/vector-icons/AntDesign";
 
 interface ReservationViewProps {
   reservation: Rental;
@@ -33,35 +35,34 @@ const ReservationView = (props: ReservationViewProps) => {
     });
   }, [props.reservation.unit_id]);
 
-  return (
-    unit && (
-      <Card>
-        <CardHeader>
-          <CardTitle>{props.reservation.customer_first_name}</CardTitle>
-          <CardDescription>
-            {unit.model.brand} - {unit.model.price_per_day / 100}€
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="gap-4 native:gap-2">
-          <CardDescription>
-            <P>
-              {dayjs(props.reservation.start_date).format("DD MMMM H:M")} -{" "}
-              {dayjs(props.reservation.end_date).format("DD MMMM H:M")}
-            </P>
-          </CardDescription>
-        </CardContent>
-        <CardFooter className="gap-4 flex justify-end">
-          <Button variant="default">
-            <Text>Accepter</Text>
-          </Button>
-          <Button variant="secondary">
-            <Text>Refuser</Text>
-          </Button>
-        </CardFooter>
-      </Card>
-    )
+  return unit ? (
+    <Card>
+      <CardHeader>
+        <CardTitle>{props.reservation.customer_first_name}</CardTitle>
+        <CardDescription>
+          {unit.model.brand} - {unit.model.price_per_day / 100}€
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="gap-4 native:gap-2">
+        <CardDescription>
+          <P>
+            {dayjs(props.reservation.start_date).format("DD MMMM H:M")} -{" "}
+            {dayjs(props.reservation.end_date).format("DD MMMM H:M")}
+          </P>
+        </CardDescription>
+      </CardContent>
+      <CardFooter className="gap-4 flex justify-end">
+        <Button variant="default">
+          <Text>Accepter</Text>
+        </Button>
+        <Button variant="secondary">
+          <Text>Refuser</Text>
+        </Button>
+      </CardFooter>
+    </Card>
+  ) : (
+    <Skeleton className="h-12 w-12 rounded-full" />
   );
-  !unit && <Text>Loading...</Text>;
 };
 export default function Home() {
   const Tab = createBottomTabNavigator();
@@ -99,19 +100,28 @@ export default function Home() {
       reservations?.bookings_grouped_by_day.map((group) => {
         return { title: group.day, data: group.Rentals };
       }) || [];
-    return (
-      <SectionList
-        className="gap-4 gap-y-4 p-4"
-        sections={data}
-        ItemSeparatorComponent={() => <View className="h-4"></View>}
-        renderItem={({ item }) => <ReservationView reservation={item} />}
-        renderSectionHeader={({ section }) => (
-          <H4 className="m-2 bg-white w-full">
-            {dayjs(section.title, "YYYY-MM-DD").format("DD MMMM")}
-          </H4>
-        )}
-        keyExtractor={(item) => String(item.id)}
-      ></SectionList>
+    return reservations ? (
+      reservations.bookings_grouped_by_day.length === 0 ? (
+        <View className="flex justify-center items-center h-full gap-2">
+          <AntDesign name="checkcircleo" size={24} color="black" />
+          <H4>Aucunes réservations</H4>
+        </View>
+      ) : (
+        <SectionList
+          className="gap-4 gap-y-4 p-4"
+          sections={data}
+          ItemSeparatorComponent={() => <View className="h-4"></View>}
+          renderItem={({ item }) => <ReservationView reservation={item} />}
+          renderSectionHeader={({ section }) => (
+            <H4 className="m-2 bg-white w-full">
+              {dayjs(section.title, "YYYY-MM-DD").format("DD MMMM")}
+            </H4>
+          )}
+          keyExtractor={(item) => String(item.id)}
+        ></SectionList>
+      )
+    ) : (
+      <Skeleton className="h-12 w-12 rounded-full" />
     );
   };
 
