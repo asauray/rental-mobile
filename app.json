@@ -14,14 +14,20 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "net.sauray.cowork"
+      "bundleIdentifier": "net.sauray.booking.cowork",
+      "associatedDomains": [
+        "applinks:app.cowork.sauray.net?mode=<alternate mode>",
+        "applinks:cowork.sauray.net?mode=<alternate mode>",
+        "applinks:app.cowork.sauray.net?mode=developer",
+        "applinks:cowork-booking-1354e.firebaseapp.com?mode=developer"
+      ]
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "net.sauray.cowork"
+      "package": "net.sauray.booking.cowork"
     },
     "web": {
       "bundler": "metro",
