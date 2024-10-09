@@ -13,7 +13,8 @@ import {
 import * as Linking from "expo-linking";
 import { Button } from "@/components/ui/button";
 import { Text } from "~/components/ui/text";
-import { useNavigation } from "expo-router";
+import { useNavigation, useRootNavigation, useRouter } from "expo-router";
+import Home from "./homepage";
 
 const styles = StyleSheet.create({
   sectionContainer: {
@@ -56,8 +57,9 @@ const signInDeepLink = "https://app.cowork.sauray.net/sign-in";
 export default function SignIn() {
   const currentUser = auth().currentUser;
   if (currentUser) {
-    const navigation = useNavigation();
-    navigation.navigate("home");
+    //const navigation = useNavigation();
+    //navigation.navigate<any>("homepage");
+    return Home();
   }
 
   const [email, setEmail] = useState("");

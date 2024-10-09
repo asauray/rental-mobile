@@ -3,7 +3,7 @@ PODS:
   - DoubleConversion (1.1.6)
   - EXConstants (16.0.2):
     - ExpoModulesCore
-  - Expo (51.0.32):
+  - Expo (51.0.37):
     - ExpoModulesCore
   - ExpoAsset (10.0.10):
     - ExpoModulesCore
@@ -15,7 +15,7 @@ PODS:
     - ExpoModulesCore
   - ExpoKeepAwake (13.0.2):
     - ExpoModulesCore
-  - ExpoModulesCore (1.12.24):
+  - ExpoModulesCore (1.12.25):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -42,7 +42,7 @@ PODS:
     - ExpoModulesCore
   - ExpoWebBrowser (13.0.3):
     - ExpoModulesCore
-  - EXSplashScreen (0.27.5):
+  - EXSplashScreen (0.27.6):
     - DoubleConversion
     - ExpoModulesCore
     - glog
@@ -1090,6 +1090,31 @@ PODS:
   - React-Mapbuffer (0.74.5):
     - glog
     - React-debug
+  - react-native-config (1.5.3):
+    - react-native-config/App (= 1.5.3)
+  - react-native-config/App (1.5.3):
+    - React-Core
+  - react-native-pager-view (6.3.0):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.01.01.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Codegen
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-safe-area-context (4.10.5):
     - React-Core
   - React-nativeconfig (0.74.5)
@@ -1454,6 +1479,8 @@ DEPENDENCIES:
   - React-jsitracing (from `../node_modules/react-native/ReactCommon/hermes/executor/`)
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
+  - react-native-config (from `../node_modules/react-native-config`)
+  - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
@@ -1596,6 +1623,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/logger"
   React-Mapbuffer:
     :path: "../node_modules/react-native/ReactCommon"
+  react-native-config:
+    :path: "../node_modules/react-native-config"
+  react-native-pager-view:
+    :path: "../node_modules/react-native-pager-view"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   React-nativeconfig:
@@ -1669,16 +1700,16 @@ SPEC CHECKSUMS:
   boost: d3f49c53809116a5d38da093a8aa78bf551aed09
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
   EXConstants: 409690fbfd5afea964e5e9d6c4eb2c2b59222c59
-  Expo: 33132a667698a3259a4e6c0af1b4936388e5fa33
+  Expo: 67b60b3b80a3c8e9f3bcaaa84d06d140229a246d
   ExpoAsset: 323700f291684f110fb55f0d4022a3362ea9f875
   ExpoFileSystem: 80bfe850b1f9922c16905822ecbf97acd711dc51
   ExpoFont: 00756e6c796d8f7ee8d211e29c8b619e75cbf238
   ExpoHead: fcb28a68ed4ba28f177394d2dfb8a0a8824cd103
   ExpoKeepAwake: 3b8815d9dd1d419ee474df004021c69fdd316d08
-  ExpoModulesCore: db3e31e694684f08223d713e89f7648c6d3e04d0
+  ExpoModulesCore: 3f83202e3cfec3aa1485eaf2e68cc902b2b10737
   ExpoSystemUI: d4f065a016cae6721b324eb659cdee4d4cf0cb26
   ExpoWebBrowser: 7595ccac6938eb65b076385fd23d035db9ecdc8e
-  EXSplashScreen: d8b3c547b9b18a41d80c6f6b274c4c26664febd4
+  EXSplashScreen: 20d60cb03f05e50c23745bf2dc2573b9b2eb42ec
   FBLazyVector: ac12dc084d1c8ec4cc4d7b3cf1b0ebda6dab85af
   Firebase: 98e6bf5278170668a7983e12971a66b2cd57fc8c
   FirebaseAppCheckInterop: 7789a8adfb09e905ce02a76540b94b059029ea81
@@ -1725,6 +1756,8 @@ SPEC CHECKSUMS:
   React-jsitracing: c83efb63c8e9e1dff72a3c56e88ae1c530a87795
   React-logger: 257858bd55f3a4e1bc0cf07ddc8fb9faba6f8c7c
   React-Mapbuffer: dce508662b995ffefd29e278a16b78217039d43d
+  react-native-config: 8f7283449bbb048902f4e764affbbf24504454af
+  react-native-pager-view: b4ba00095f74ab430250cef2a119a5e2491b2c8d
   react-native-safe-area-context: a240ad4b683349e48b1d51fed1611138d1bdad97
   React-nativeconfig: f326487bc61eba3f0e328da6efb2711533dcac46
   React-NativeModulesApple: d89733f5baed8b9249ca5a8e497d63c550097312

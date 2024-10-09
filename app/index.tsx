@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import auth from "@react-native-firebase/auth";
-import { View } from "react-native";
-import { Text } from "~/components/ui/text";
 import SignIn from "./sign-in";
+import Home from "./homepage";
 
 export default function Index() {
   // Set an initializing state whilst Firebase connects
@@ -24,11 +23,7 @@ export default function Index() {
 
   if (!user) {
     return <SignIn />;
+  } else {
+    return <Home />;
   }
-
-  return (
-    <View>
-      <Text>Welcome {user.email}</Text>
-    </View>
-  );
 }

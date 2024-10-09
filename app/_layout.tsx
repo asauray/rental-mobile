@@ -62,9 +62,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
       <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-      <Stack>
+      <Stack initialRouteName="sign-in">
         <Stack.Screen name="sign-in" />
-        <Stack.Screen name="home" />
+        <Stack.Screen name="homepage" />
       </Stack>
     </ThemeProvider>
   );
