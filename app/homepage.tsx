@@ -1,8 +1,7 @@
 import * as React from "react";
 import dayjs from "dayjs";
-import { SectionList, View } from "react-native";
+import { RefreshControl, SectionList, View } from "react-native";
 import { Text } from "@/components/ui/text";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -11,8 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -22,15 +19,27 @@ import { ProductUnit, Rental, RentalApi, Reservations } from "./api/rental_api";
 import { H4, P } from "@/components/ui/typography";
 import { Skeleton } from "@/components/ui/skeleton";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
+import { ProfileView } from "./ProfileView";
+import { router } from "expo-router";
+import { TenantContext } from "./TenantContextProvider";
 
 interface ReservationViewProps {
   reservation: Rental;
+  tenant: number;
+  currentUser: FirebaseAuthTypes.User;
+  reloadRentals: () => void;
 }
 
 const ReservationView = (props: ReservationViewProps) => {
   const [unit, setUnit] = React.useState<ProductUnit | undefined>(undefined);
   React.useEffect(() => {
-    RentalApi.fetchUnitById(props.reservation.unit_id).then((unit) => {
+    RentalApi.fetchUnitById(
+      props.reservation.unit_id,
+      props.tenant,
+      props.currentUser,
+      () => auth().signOut()
+    ).then((unit) => {
       setUnit(unit);
     });
   }, [props.reservation.unit_id]);
@@ -40,96 +49,187 @@ const ReservationView = (props: ReservationViewProps) => {
       <CardHeader>
         <CardTitle>{props.reservation.customer_first_name}</CardTitle>
         <CardDescription>
-          {unit.model.brand} - {unit.model.price_per_day / 100}€
+          {unit.model.brand} - {unit.model.name}
         </CardDescription>
       </CardHeader>
       <CardContent className="gap-4 native:gap-2">
         <CardDescription>
-          <P>
-            {dayjs(props.reservation.start_date).format("DD MMMM H:M")} -{" "}
-            {dayjs(props.reservation.end_date).format("DD MMMM H:M")}
-          </P>
+          <P>{unit.model.price_per_day / 100}€</P>
+        </CardDescription>
+        <CardDescription>
+          <P>{dayjs(props.reservation.start_date).format("DD MMMM H:mm")}</P>
+        </CardDescription>
+        <CardDescription>
+          <P>{dayjs(props.reservation.end_date).format("DD MMMM H:mm")}</P>
         </CardDescription>
       </CardContent>
-      <CardFooter className="gap-4 flex justify-end">
-        <Button variant="default">
-          <Text>Accepter</Text>
-        </Button>
-        <Button variant="secondary">
-          <Text>Refuser</Text>
-        </Button>
-      </CardFooter>
+      {props.reservation.state == "pending_capture" && (
+        <CardFooter className="gap-4 flex justify-end">
+          <Button
+            variant="default"
+            onPress={() => {
+              console.log("replying to reservation: " + props.reservation.id);
+              RentalApi.replyToReservation(
+                props.reservation.id,
+                "accept",
+                props.tenant,
+                props.currentUser,
+                () => auth().signOut()
+              ).then(() => props.reloadRentals());
+            }}
+          >
+            <Text>Accepter</Text>
+          </Button>
+          <Button
+            variant="secondary"
+            onPress={() => {
+              console.log("replying to reservation: " + props.reservation.id);
+              RentalApi.replyToReservation(
+                props.reservation.id,
+                "reject",
+                props.tenant,
+                props.currentUser,
+                () => auth().signOut()
+              ).then(() => props.reloadRentals());
+            }}
+          >
+            <Text>Refuser</Text>
+          </Button>
+        </CardFooter>
+      )}
+      {props.reservation.state == "confirmed" && (
+        <CardFooter className="gap-4 flex justify-end">
+          <Button
+            variant="destructive"
+            onPress={() => {
+              console.log("replying to reservation: " + props.reservation.id);
+              RentalApi.replyToReservation(
+                props.reservation.id,
+                "cancel",
+                props.tenant,
+                props.currentUser,
+                () => auth().signOut()
+              ).then(() => props.reloadRentals());
+            }}
+          >
+            <Text>Annuler</Text>
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   ) : (
     <Skeleton className="h-12 w-12 rounded-full" />
   );
 };
 export default function Home() {
+  const currentUser = auth().currentUser;
+  if (!currentUser) {
+    router.replace("/sign-in");
+    return;
+  }
+
+  const { tenant } = React.useContext(TenantContext);
+
   const Tab = createBottomTabNavigator();
   interface ReservationProps {
     states: [string];
+    actions: boolean;
   }
-  const PendingReservations = () => <ReservationsView states={["intended"]} />;
+  const PendingReservations = () => (
+    <ReservationsView states={["pending_capture"]} actions={true} />
+  );
   const ConfirmedReservations = () => (
-    <ReservationsView states={["confirmed"]} />
+    <ReservationsView states={["confirmed"]} actions={false} />
   );
   const ReservationsView = (reservationProps: ReservationProps) => {
-    let previous: string | undefined = undefined;
-    let next: string | undefined = undefined;
+    let next = dayjs().subtract(3, "day").format();
 
     const [reservations, setReservations] = React.useState<
       Reservations | undefined
     >(undefined);
 
+    const reloadData = (fromDate: string) => {
+      setRefreshing(true);
+      tenant &&
+        currentUser &&
+        RentalApi.fetchRentals(
+          fromDate,
+          reservationProps.states,
+          tenant,
+          currentUser,
+          () => auth().signOut()
+        )
+          .then((newReservations) => {
+            setReservations(newReservations);
+            setRefreshing(false);
+          })
+          .catch((error) => {
+            console.log(error);
+            setRefreshing(false);
+          });
+    };
+
     React.useEffect(() => {
-      console.log("use effect");
-      RentalApi.fetchRentals(next, reservationProps.states)
-        .then((reservations) => {
-          console.log("got reservations");
-          console.log(reservations);
-          setReservations(reservations);
-          previous = reservations.previous;
-          next = reservations.next;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      reloadData(next);
     }, []);
 
     const data =
       reservations?.bookings_grouped_by_day.map((group) => {
-        return { title: group.day, data: group.Rentals };
+        return { title: group.day, data: group.rentals };
       }) || [];
-    return reservations ? (
-      reservations.bookings_grouped_by_day.length === 0 ? (
-        <View className="flex justify-center items-center h-full gap-2">
-          <AntDesign name="checkcircleo" size={24} color="black" />
-          <H4>Aucunes réservations</H4>
-        </View>
-      ) : (
-        <SectionList
-          className="gap-4 gap-y-4 p-4"
-          sections={data}
-          ItemSeparatorComponent={() => <View className="h-4"></View>}
-          renderItem={({ item }) => <ReservationView reservation={item} />}
-          renderSectionHeader={({ section }) => (
-            <H4 className="m-2 bg-white w-full">
-              {dayjs(section.title, "YYYY-MM-DD").format("DD MMMM")}
-            </H4>
-          )}
-          keyExtractor={(item) => String(item.id)}
-        ></SectionList>
-      )
+
+    const [refreshing, setRefreshing] = React.useState(false);
+
+    const onPullDown = React.useCallback(() => {
+      reloadData(next);
+    }, []);
+
+    return tenant && currentUser && reservations ? (
+      <SectionList
+        ListEmptyComponent={() => (
+          <View className="flex justify-center items-center w-full h-full gap-2">
+            <AntDesign name="checkcircleo" size={24} color="black" />
+            <H4>Aucunes réservations</H4>
+          </View>
+        )}
+        contentContainerStyle={{ flexGrow: 1 }}
+        className="gap-4 gap-y-4 p-4"
+        sections={data}
+        onStartReached={() => {
+          //reloadData(previous || next);
+        }}
+        onEndReached={() => {}}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onPullDown} />
+        }
+        ItemSeparatorComponent={() => <View className="h-4"></View>}
+        renderItem={({ item }) => (
+          <ReservationView
+            reservation={item}
+            currentUser={currentUser}
+            tenant={tenant}
+            reloadRentals={() => {
+              console.log("reload all rentals");
+              reloadData(next);
+            }}
+          />
+        )}
+        renderSectionHeader={({ section }) => (
+          <H4 className="m-2 bg-white w-full">
+            {dayjs(section.title, "YYYY-MM-DD").format("DD MMMM")}
+          </H4>
+        )}
+        keyExtractor={(item) => `${item.id}`}
+      ></SectionList>
     ) : (
-      <Skeleton className="h-12 w-12 rounded-full" />
+      <View className="flex justify-center items-center w-full h-full gap-4">
+        <Skeleton className="h-16 w-72 rounded-3xl" />
+        <Skeleton className="h-16 w-72 rounded-3xl" />
+        <Skeleton className="h-16 w-72 rounded-3xl" />
+      </View>
     );
   };
 
-  const Profile = () => (
-    <View>
-      <Text>Profile</Text>
-    </View>
-  );
   return (
     <Tab.Navigator>
       <Tab.Screen
@@ -137,6 +237,7 @@ export default function Home() {
         component={PendingReservations}
         options={{
           tabBarLabel: "Notifications",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="notifications" size={size} color={color} />
           ),
@@ -147,6 +248,7 @@ export default function Home() {
         component={ConfirmedReservations}
         options={{
           tabBarLabel: "Agenda",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Entypo name="calendar" size={size} color={color} />
           ),
@@ -155,9 +257,10 @@ export default function Home() {
 
       <Tab.Screen
         name="Profile"
-        component={Profile}
+        children={() => <ProfileView user={currentUser} />}
         options={{
           tabBarLabel: "Profile",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="user" size={size} color={color} />
           ),
@@ -165,59 +268,4 @@ export default function Home() {
       />
     </Tab.Navigator>
   );
-  // const [value, setValue] = React.useState("account");
-  // return (
-  //   <View className="flex-1 justify-center p-6">
-  //     <Tabs
-  //       value={value}
-  //       onValueChange={setValue}
-  //       className="w-full max-w-[400px] mx-auto flex-col gap-1.5"
-  //     >
-  //       <TabsList className="flex-row w-full">
-  //         <TabsTrigger value="account" className="flex-1">
-  //           <Text>Account</Text>
-  //         </TabsTrigger>
-  //         <TabsTrigger value="password" className="flex-1">
-  //           <Text>Password</Text>
-  //         </TabsTrigger>
-  //       </TabsList>
-  //       <TabsContent value="account">
-
-  //       </TabsContent>
-  //       <TabsContent value="password">
-  //         <Card>
-  //           <CardHeader>
-  //             <CardTitle>Password</CardTitle>
-  //             <CardDescription>
-  //               Change your password here. After saving, you'll be logged out.
-  //             </CardDescription>
-  //           </CardHeader>
-  //           <CardContent className="gap-4 native:gap-2">
-  //             <View className="gap-1">
-  //               <Label nativeID="current">Current password</Label>
-  //               <Input
-  //                 placeholder="********"
-  //                 aria-labelledby="current"
-  //                 secureTextEntry
-  //               />
-  //             </View>
-  //             <View className="gap-1">
-  //               <Label nativeID="new">New password</Label>
-  //               <Input
-  //                 placeholder="********"
-  //                 aria-labelledby="new"
-  //                 secureTextEntry
-  //               />
-  //             </View>
-  //           </CardContent>
-  //           <CardFooter>
-  //             <Button>
-  //               <Text>Save password</Text>
-  //             </Button>
-  //           </CardFooter>
-  //         </Card>
-  //       </TabsContent>
-  //     </Tabs>
-  //   </View>
-  // );
 }

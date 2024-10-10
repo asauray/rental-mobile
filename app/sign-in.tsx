@@ -9,12 +9,13 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  View,
 } from "react-native";
 import * as Linking from "expo-linking";
 import { Button } from "@/components/ui/button";
 import { Text } from "~/components/ui/text";
-import { useNavigation, useRootNavigation, useRouter } from "expo-router";
-import Home from "./homepage";
+import * as Burnt from "burnt";
+import { router } from "expo-router";
 
 const styles = StyleSheet.create({
   sectionContainer: {
@@ -55,13 +56,6 @@ const styles = StyleSheet.create({
 
 const signInDeepLink = "https://app.cowork.sauray.net/sign-in";
 export default function SignIn() {
-  const currentUser = auth().currentUser;
-  if (currentUser) {
-    //const navigation = useNavigation();
-    //navigation.navigate<any>("homepage");
-    return Home();
-  }
-
   const [email, setEmail] = useState("");
   const url = Linking.useURL();
   console.log("link that started the app:" + url);
@@ -82,7 +76,18 @@ export default function SignIn() {
         },
       });
 
-      Alert.alert(`Login link sent to ${email}`);
+      Burnt.toast({
+        title: "Email sent",
+        message: "Check your email for the sign-in link",
+        preset: "done",
+        icon: {
+          ios: {
+            // SF Symbol. For a full list, see https://developer.apple.com/sf-symbols/.
+            name: "checkmark.seal",
+            color: "#1D9BF0",
+          },
+        },
+      });
     } catch (error) {
       console.error(error);
       Alert.alert("Error sending login link");
@@ -94,15 +99,17 @@ export default function SignIn() {
       .signInWithEmailLink(email, url)
       .then((result) => {
         result && console.log(result);
+        router.replace("/homepage");
       });
   } else {
     return (
       <SafeAreaView
         style={styles.authContainer}
-        className="flex justify-center items-center gap-4 p-4"
+        className="flex justify-center items-center gap-4 m-4"
       >
         <Logo />
         <KeyboardAvoidingView
+          className="w-full"
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           enabled={false}
         >
@@ -116,7 +123,7 @@ export default function SignIn() {
             onChangeText={(text) => setEmail(text)}
           />
         </KeyboardAvoidingView>
-        <Button className="w-full" onPress={() => sendSignInLink(email)}>
+        <Button className="w-full m-4" onPress={() => sendSignInLink(email)}>
           <Text>Se connecter</Text>
         </Button>
       </SafeAreaView>

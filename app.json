@@ -20,14 +20,16 @@
         "applinks:cowork.sauray.net?mode=<alternate mode>",
         "applinks:app.cowork.sauray.net?mode=developer",
         "applinks:cowork-booking-1354e.firebaseapp.com?mode=developer"
-      ]
+      ],
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "net.sauray.booking.cowork"
+      "package": "net.sauray.booking.cowork",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",

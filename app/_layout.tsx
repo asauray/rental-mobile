@@ -8,6 +8,8 @@ import * as React from "react";
 import { Platform } from "react-native";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
+import { PortalHost } from "@rn-primitives/portal";
+import { TenantContext } from "./TenantContextProvider";
 
 const LIGHT_THEME: Theme = {
   dark: false,
@@ -28,10 +30,17 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
+  const [thisTenant, thisSetTenant] = React.useState<number | undefined>(
+    undefined
+  );
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
 
   React.useEffect(() => {
     (async () => {
+      const tenant = await AsyncStorage.getItem("tenant");
+      console.log("tenant: " + tenant);
+      thisSetTenant(tenant ? parseInt(tenant, 10) : undefined);
+
       const theme = await AsyncStorage.getItem("theme");
       if (Platform.OS === "web") {
         // Adds the background color to the html element to prevent white background on overscroll.
@@ -61,11 +70,32 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-      <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-      <Stack initialRouteName="sign-in">
-        <Stack.Screen name="sign-in" />
-        <Stack.Screen name="homepage" />
-      </Stack>
+      <TenantContext.Provider
+        value={{
+          tenant: thisTenant,
+          setTenant: (tenant) => {
+            console.log("Setting tenant: " + tenant);
+            AsyncStorage.setItem("tenant", tenant.toString())
+              .then(() => {
+                AsyncStorage.getItem("tenant").then((value) => {
+                  console.log("new tenant: " + tenant);
+                });
+                thisSetTenant(tenant);
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+          },
+        }}
+      >
+        <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+        <Stack initialRouteName="index">
+          <Stack.Screen name="index" options={{ title: "Home" }} />
+          <Stack.Screen name="sign-in" options={{ title: "Connection" }} />
+          <Stack.Screen name="homepage" options={{ title: "Home" }} />
+        </Stack>
+        <PortalHost />
+      </TenantContext.Provider>
     </ThemeProvider>
   );
 }

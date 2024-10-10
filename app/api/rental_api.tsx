@@ -1,3 +1,4 @@
+import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import Config from "react-native-config";
 
 const rootUrl = "http://192.168.1.15:8080"; //Config.API_ROOT_URL;
@@ -16,7 +17,7 @@ export interface Rental {
 
 export interface BookingsGroupedByDay {
   day: string;
-  Rentals: Rental[];
+  rentals: Rental[];
 }
 
 export interface Reservations {
@@ -53,22 +54,102 @@ export interface Model {
   formatted_slot_duration: string;
   formatted_price_per_slot: string;
 }
+export interface Tenant {
+  id: number;
+  name: string;
+}
+export interface MyTenantsResponse {
+  tenants: Tenant[];
+}
 export const RentalApi = {
-  fetchUnitById: (unitId: number) => {
+  replyToReservation: (
+    reservationId: number,
+    response: "accept" | "reject" | "cancel",
+    tenant: number,
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/me/reservations/${reservationId}`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          method: "POST",
+          body: JSON.stringify({
+            response: response,
+          }),
+          headers: {
+            "Tenant-id": `${tenant}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+        })
+      )
+      .then((response) => {
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  },
+  fetchMyTenants: (
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/me/tenants`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        })
+      )
+      .then((response) => {
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .then((data) => data as MyTenantsResponse);
+  },
+  fetchUnitById: (
+    unitId: number,
+    tenant: number,
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
+  ) => {
     const url = `${rootUrl}/api/v1/rooms/units/${unitId}`;
-    console.log("fetching");
-    return fetch(url, {
-      headers: {
-        "Tenant-id": "2",
-      },
-    })
-      .then((response) => response.json())
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          headers: {
+            "Tenant-id": `${tenant}`,
+            Authorization: `Bearer ${idToken}`,
+          },
+        })
+      )
+      .then((response) => {
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
       .then((data) => data as ProductUnit);
   },
   fetchRentals: (
     fromDate: string | undefined,
-    states: [string] | undefined
+    states: string[] | undefined,
+    tenant: number,
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
   ) => {
+    console.log(`tenant: ${tenant}`);
     let queryParams: Record<string, string> = {};
     if (fromDate) {
       queryParams["from_date_time"] = fromDate;
@@ -79,13 +160,22 @@ export const RentalApi = {
     const url = `${rootUrl}/api/v1/me/reservations?${new URLSearchParams(
       queryParams
     )}`;
-    console.log("fetching");
-    return fetch(url, {
-      headers: {
-        "Tenant-id": "2",
-      },
-    })
-      .then((response) => response.json())
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          headers: {
+            "Tenant-id": `${tenant}`,
+            Authorization: `Bearer ${idToken}`,
+          },
+        })
+      )
+      .then((response) => {
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
       .then((data) => data as Reservations);
   },
 };
