@@ -5,18 +5,11 @@ import { Text } from "@/components/ui/text";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useContext, useEffect, useState } from "react";
 import { RentalApi, Tenant } from "./api/rental_api";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TenantContext } from "./TenantContextProvider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SelectTenantView } from "./SelectTenantView";
 
 export interface ProfileViewProps {
   user: FirebaseAuthTypes.User;
@@ -31,23 +24,6 @@ const styles = StyleSheet.create({
 });
 
 export const ProfileView = ({ user }: ProfileViewProps) => {
-  const [tenants, setTenants] = useState<Tenant[] | undefined>(undefined);
-  const { tenant, setTenant } = useContext(TenantContext);
-  useEffect(() => {
-    RentalApi.fetchMyTenants(user, () => auth().signOut()).then(
-      (myTenantsResponse) => {
-        setTenants(myTenantsResponse.tenants);
-      }
-    );
-  }, []);
-  const insets = useSafeAreaInsets();
-  const contentInsets = {
-    top: insets.top,
-    bottom: insets.bottom,
-    left: 12,
-    right: 12,
-  };
-
   return (
     <View className="p-4 h-full flex justify-between items-cente">
       <Card>
@@ -61,40 +37,7 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
         </CardHeader>
       </Card>
 
-      {tenants && tenants.length > 0 && (
-        <Select
-          defaultValue={{
-            value: String(tenant) || String(tenants[0].id),
-            label: tenants.find((t) => t.id === tenant)?.name ?? "inconnu",
-          }}
-          onValueChange={(tenant) => {
-            if (tenant) {
-              setTenant(parseInt(tenant.value));
-            }
-          }}
-        >
-          <SelectTrigger className="w-[250px]">
-            <SelectValue
-              className="text-foreground text-sm native:text-lg"
-              placeholder="Selectionnez un tenant"
-            />
-          </SelectTrigger>
-          <SelectContent insets={contentInsets} className="w-[250px]">
-            {tenants && (
-              <SelectGroup>
-                {tenants.map((tenant) => (
-                  <View key={tenant.id}>
-                    <SelectLabel>{tenant.name}</SelectLabel>
-                    <SelectItem label={tenant.name} value={`${tenant.id}`}>
-                      {tenant.id}
-                    </SelectItem>
-                  </View>
-                ))}
-              </SelectGroup>
-            )}
-          </SelectContent>
-        </Select>
-      )}
+      <SelectTenantView user={user} />
       <Button
         className="w-full"
         onPress={() => {

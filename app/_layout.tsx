@@ -38,7 +38,6 @@ export default function RootLayout() {
   React.useEffect(() => {
     (async () => {
       const tenant = await AsyncStorage.getItem("tenant");
-      console.log("tenant: " + tenant);
       thisSetTenant(tenant ? parseInt(tenant, 10) : undefined);
 
       const theme = await AsyncStorage.getItem("theme");

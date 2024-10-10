@@ -8,6 +8,9 @@ export interface Rental {
   unit_id: number;
   start_date: string;
   end_date: string;
+  price_amount_minor: number;
+  currency: string;
+  formatted_price: string;
   customer_first_name: string;
   customer_last_name: string;
   customer_email: string;
@@ -17,6 +20,7 @@ export interface Rental {
 
 export interface BookingsGroupedByDay {
   day: string;
+  grouping_key: string;
   rentals: Rental[];
 }
 
@@ -51,6 +55,8 @@ export interface Model {
   price_per_day: number;
   room_properties: RoomProperties;
   slot_duration_seconds: number;
+  slot_price_amount_minor: number;
+  slot_price_currency: string;
   formatted_slot_duration: string;
   formatted_price_per_slot: string;
 }
@@ -89,9 +95,9 @@ export const RentalApi = {
         if (response.status == 401 || response.status == 403) {
           return signOut();
         }
-        return response.json();
       })
       .catch((error) => {
+        console.log("fuck");
         console.log(error);
       });
   },
@@ -145,12 +151,14 @@ export const RentalApi = {
   fetchRentals: (
     fromDate: string | undefined,
     states: string[] | undefined,
+    groupBy: "day" | "purchase",
     tenant: number,
     user: FirebaseAuthTypes.User,
     signOut: () => Promise<void>
   ) => {
     console.log(`tenant: ${tenant}`);
     let queryParams: Record<string, string> = {};
+    queryParams["group_by"] = groupBy;
     if (fromDate) {
       queryParams["from_date_time"] = fromDate;
     }
@@ -175,6 +183,10 @@ export const RentalApi = {
           return signOut();
         }
         return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+        return data;
       })
       .then((data) => data as Reservations);
   },

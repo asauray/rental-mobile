@@ -2,125 +2,33 @@ import * as React from "react";
 import dayjs from "dayjs";
 import { RefreshControl, SectionList, View } from "react-native";
 import { Text } from "@/components/ui/text";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Entypo from "@expo/vector-icons/Entypo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { ProductUnit, Rental, RentalApi, Reservations } from "./api/rental_api";
-import { H4, P } from "@/components/ui/typography";
+import { Rental, RentalApi, Reservations } from "./api/rental_api";
+import { H4, Muted, P } from "@/components/ui/typography";
 import { Skeleton } from "@/components/ui/skeleton";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
+import auth from "@react-native-firebase/auth";
 import { ProfileView } from "./ProfileView";
 import { router } from "expo-router";
 import { TenantContext } from "./TenantContextProvider";
+import { SelectTenantView } from "./SelectTenantView";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { WeekSelectorView } from "./WeekSelectorView";
+import { ReservationView } from "./ReservationView";
+import { NotificationsView } from "./NotificationView";
 
-interface ReservationViewProps {
-  reservation: Rental;
-  tenant: number;
-  currentUser: FirebaseAuthTypes.User;
-  reloadRentals: () => void;
-}
+const weekOfYear = require("dayjs/plugin/weekOfYear");
+dayjs.extend(weekOfYear);
 
-const ReservationView = (props: ReservationViewProps) => {
-  const [unit, setUnit] = React.useState<ProductUnit | undefined>(undefined);
-  React.useEffect(() => {
-    RentalApi.fetchUnitById(
-      props.reservation.unit_id,
-      props.tenant,
-      props.currentUser,
-      () => auth().signOut()
-    ).then((unit) => {
-      setUnit(unit);
-    });
-  }, [props.reservation.unit_id]);
-
-  return unit ? (
-    <Card>
-      <CardHeader>
-        <CardTitle>{props.reservation.customer_first_name}</CardTitle>
-        <CardDescription>
-          {unit.model.brand} - {unit.model.name}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="gap-4 native:gap-2">
-        <CardDescription>
-          <P>{unit.model.price_per_day / 100}€</P>
-        </CardDescription>
-        <CardDescription>
-          <P>{dayjs(props.reservation.start_date).format("DD MMMM H:mm")}</P>
-        </CardDescription>
-        <CardDescription>
-          <P>{dayjs(props.reservation.end_date).format("DD MMMM H:mm")}</P>
-        </CardDescription>
-      </CardContent>
-      {props.reservation.state == "pending_capture" && (
-        <CardFooter className="gap-4 flex justify-end">
-          <Button
-            variant="default"
-            onPress={() => {
-              console.log("replying to reservation: " + props.reservation.id);
-              RentalApi.replyToReservation(
-                props.reservation.id,
-                "accept",
-                props.tenant,
-                props.currentUser,
-                () => auth().signOut()
-              ).then(() => props.reloadRentals());
-            }}
-          >
-            <Text>Accepter</Text>
-          </Button>
-          <Button
-            variant="secondary"
-            onPress={() => {
-              console.log("replying to reservation: " + props.reservation.id);
-              RentalApi.replyToReservation(
-                props.reservation.id,
-                "reject",
-                props.tenant,
-                props.currentUser,
-                () => auth().signOut()
-              ).then(() => props.reloadRentals());
-            }}
-          >
-            <Text>Refuser</Text>
-          </Button>
-        </CardFooter>
-      )}
-      {props.reservation.state == "confirmed" && (
-        <CardFooter className="gap-4 flex justify-end">
-          <Button
-            variant="destructive"
-            onPress={() => {
-              console.log("replying to reservation: " + props.reservation.id);
-              RentalApi.replyToReservation(
-                props.reservation.id,
-                "cancel",
-                props.tenant,
-                props.currentUser,
-                () => auth().signOut()
-              ).then(() => props.reloadRentals());
-            }}
-          >
-            <Text>Annuler</Text>
-          </Button>
-        </CardFooter>
-      )}
-    </Card>
-  ) : (
-    <Skeleton className="h-12 w-12 rounded-full" />
-  );
-};
 export default function Home() {
   const currentUser = auth().currentUser;
   if (!currentUser) {
@@ -129,32 +37,37 @@ export default function Home() {
   }
 
   const { tenant } = React.useContext(TenantContext);
+  if (!tenant) {
+    return <SelectTenantView user={currentUser} />;
+  }
 
   const Tab = createBottomTabNavigator();
   interface ReservationProps {
     states: [string];
-    actions: boolean;
   }
   const PendingReservations = () => (
-    <ReservationsView states={["pending_capture"]} actions={true} />
+    <NotificationsView currentUser={currentUser} tenant={tenant} />
   );
   const ConfirmedReservations = () => (
-    <ReservationsView states={["confirmed"]} actions={false} />
+    <ReservationsView states={["confirmed"]} />
   );
   const ReservationsView = (reservationProps: ReservationProps) => {
-    let next = dayjs().subtract(3, "day").format();
+    const [from, setFrom] = React.useState<dayjs.Dayjs>(
+      dayjs().startOf("week")
+    );
 
     const [reservations, setReservations] = React.useState<
       Reservations | undefined
     >(undefined);
 
-    const reloadData = (fromDate: string) => {
+    const reloadData = (fromDate: dayjs.Dayjs) => {
       setRefreshing(true);
       tenant &&
         currentUser &&
         RentalApi.fetchRentals(
-          fromDate,
+          fromDate.format(),
           reservationProps.states,
+          "day",
           tenant,
           currentUser,
           () => auth().signOut()
@@ -170,57 +83,82 @@ export default function Home() {
     };
 
     React.useEffect(() => {
-      reloadData(next);
-    }, []);
+      reloadData(from);
+    }, [from]);
 
     const data =
       reservations?.bookings_grouped_by_day.map((group) => {
-        return { title: group.day, data: group.rentals };
+        return { title: group.grouping_key, data: group.rentals };
       }) || [];
 
     const [refreshing, setRefreshing] = React.useState(false);
 
     const onPullDown = React.useCallback(() => {
-      reloadData(next);
+      reloadData(from);
     }, []);
 
     return tenant && currentUser && reservations ? (
-      <SectionList
-        ListEmptyComponent={() => (
-          <View className="flex justify-center items-center w-full h-full gap-2">
-            <AntDesign name="checkcircleo" size={24} color="black" />
-            <H4>Aucunes réservations</H4>
-          </View>
-        )}
-        contentContainerStyle={{ flexGrow: 1 }}
-        className="gap-4 gap-y-4 p-4"
-        sections={data}
-        onStartReached={() => {
-          //reloadData(previous || next);
-        }}
-        onEndReached={() => {}}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onPullDown} />
-        }
-        ItemSeparatorComponent={() => <View className="h-4"></View>}
-        renderItem={({ item }) => (
-          <ReservationView
-            reservation={item}
-            currentUser={currentUser}
-            tenant={tenant}
-            reloadRentals={() => {
-              console.log("reload all rentals");
-              reloadData(next);
-            }}
-          />
-        )}
-        renderSectionHeader={({ section }) => (
-          <H4 className="m-2 bg-white w-full">
-            {dayjs(section.title, "YYYY-MM-DD").format("DD MMMM")}
-          </H4>
-        )}
-        keyExtractor={(item) => `${item.id}`}
-      ></SectionList>
+      <View className="h-full">
+        <Accordion
+          type="single"
+          collapsible
+          defaultValue={undefined}
+          className="w-full max-w-sm native:max-w-md"
+        >
+          <AccordionItem value="item-1">
+            <AccordionTrigger className="flex justify-center items-center flex-wrap">
+              <Text className="basis-full text-center">{`Semaine ${from.week()}`}</Text>
+              <Muted>{`Du ${from.format("YYYY/MM/DD")} au ${from
+                ?.endOf("week")
+                .format("YYYY/MM/DD")}`}</Muted>
+            </AccordionTrigger>
+            <AccordionContent>
+              <WeekSelectorView
+                onSelect={(from, to) => {
+                  setFrom(from);
+                }}
+                initialDay={from}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+        <SectionList
+          ListEmptyComponent={() => (
+            <View className="flex justify-center items-center w-full h-full gap-2">
+              <AntDesign name="checkcircleo" size={24} color="black" />
+              <H4>Aucunes réservations</H4>
+            </View>
+          )}
+          contentContainerStyle={{ flexGrow: 1 }}
+          className="gap-4 gap-y-4 p-4"
+          sections={data}
+          onStartReached={() => {
+            //reloadData(previous || next);
+          }}
+          onEndReached={() => {}}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onPullDown} />
+          }
+          ItemSeparatorComponent={() => <View className="h-4"></View>}
+          renderItem={({ item }) => (
+            <ReservationView
+              reservation={item}
+              currentUser={currentUser}
+              tenant={tenant}
+              reloadRentals={() => {
+                console.log("reload all rentals");
+                reloadData(from);
+              }}
+            />
+          )}
+          renderSectionHeader={({ section }) => (
+            <H4 className="m-2 bg-white w-full">
+              {dayjs(section.title, "YYYY-MM-DD").format("DD MMMM")}
+            </H4>
+          )}
+          keyExtractor={(item) => `${item.id}`}
+        ></SectionList>
+      </View>
     ) : (
       <View className="flex justify-center items-center w-full h-full gap-4">
         <Skeleton className="h-16 w-72 rounded-3xl" />

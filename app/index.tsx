@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import auth from "@react-native-firebase/auth";
 import Home from "./homepage";
 import SignIn from "./sign-in";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Index() {
   // Set an initializing state whilst Firebase connects
@@ -10,17 +11,11 @@ export default function Index() {
 
   // Handle user state changes
   function onAuthStateChanged(user) {
-    setUser(user);
-    user.getIdToken().then((token) => {
-      console.log(token);
-    });
-
-    if (initializing) setInitializing(false);
-    if (user) {
-      //router.replace("/homepage");
-    } else {
-      //router.replace("/sign-in");
+    if (!user) {
+      AsyncStorage.clear();
     }
+    setUser(user);
+    if (initializing) setInitializing(false);
   }
 
   useEffect(() => {

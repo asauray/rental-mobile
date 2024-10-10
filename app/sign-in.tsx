@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Text } from "~/components/ui/text";
 import * as Burnt from "burnt";
 import { router } from "expo-router";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const styles = StyleSheet.create({
   sectionContainer: {
@@ -58,7 +59,6 @@ const signInDeepLink = "https://app.cowork.sauray.net/sign-in";
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const url = Linking.useURL();
-  console.log("link that started the app:" + url);
 
   const BUNDLE_ID = "net.sauray.booking.cowork";
 
@@ -101,6 +101,7 @@ export default function SignIn() {
         result && console.log(result);
         router.replace("/homepage");
       });
+    return <Skeleton className="h-16 w-72 rounded-3xl" />;
   } else {
     return (
       <SafeAreaView
