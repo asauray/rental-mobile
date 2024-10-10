@@ -55,18 +55,18 @@ export const SelectTenantView = ({ user }: SelectTenantViewProps) => {
             }
           }}
         >
-          <SelectTrigger className="w-[250px]">
+          <SelectTrigger>
             <SelectValue
               className="text-foreground text-sm native:text-lg"
               placeholder="Selectionnez un tenant"
             />
           </SelectTrigger>
-          <SelectContent insets={contentInsets} className="w-[250px]">
+          <SelectContent insets={contentInsets}>
+            <SelectLabel>Tenant</SelectLabel>
             {tenants && (
               <SelectGroup>
                 {tenants.map((tenant) => (
                   <View key={tenant.id}>
-                    <SelectLabel>{tenant.name}</SelectLabel>
                     <SelectItem label={tenant.name} value={`${tenant.id}`}>
                       {tenant.id}
                     </SelectItem>
