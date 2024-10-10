@@ -1,7 +1,7 @@
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import Config from "react-native-config";
 
-const rootUrl = "http://192.168.1.15:8080"; //Config.API_ROOT_URL;
+const rootUrl = Config.API_ROOT_URL;
 export interface Rental {
   id: number;
   state: string;
