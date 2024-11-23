@@ -2,12 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
+    <key>aps-environment</key>
+    <string>development</string>
     <key>com.apple.developer.associated-domains</key>
     <array>
       <string>applinks:app.cowork.sauray.net?mode=&lt;alternate mode&gt;</string>
-      <string>applinks:cowork.sauray.net?mode=&lt;alternate mode&gt;</string>
       <string>applinks:app.cowork.sauray.net?mode=developer</string>
-      <string>applinks:cowork-booking-1354e.firebaseapp.com?mode=developer</string>
+      <string>applinks:cowork-app.sauray.net</string>
+      <string>applinks:app.cowork.sauray.net</string>
     </array>
   </dict>
 </plist>

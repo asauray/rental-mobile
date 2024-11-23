@@ -17,52 +17,32 @@ import { Text } from "~/components/ui/text";
 import * as Burnt from "burnt";
 import { router } from "expo-router";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useHeaderHeight } from "@react-navigation/elements";
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    paddingHorizontal: 24,
-    height: "100%",
-  },
   authContainer: {
     flex: 1,
     justifyContent: "center",
   },
-  loadingContainer: {
-    backgroundColor: "rgba(250,250,250,0.33)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  textInput: {
-    borderColor: "blue",
-    borderWidth: 1,
-    marginTop: 16,
-    backgroundColor: "white",
-    padding: 10,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: "600",
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: "400",
-  },
-  highlight: {
-    fontWeight: "700",
-  },
 });
 
-const signInDeepLink = "https://app.cowork.sauray.net/sign-in";
+const signInDeepLink = "https://cowork-app.sauray.net/sign-in";
+const testEmailAddress = "test@boncowork.com";
 export default function SignIn() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const url = Linking.useURL();
-
+  const height = useHeaderHeight();
   const BUNDLE_ID = "net.sauray.booking.cowork";
 
-  const sendSignInLink = async (email: string) => {
+  const signIn = async () => {
+    if (email === testEmailAddress) {
+      await auth().signInWithEmailAndPassword(email, password);
+    } else {
+      await sendSignInLink();
+    }
+  };
+  const sendSignInLink = async () => {
     try {
       await AsyncStorage.setItem("emailForSignIn", email);
       await auth().sendSignInLinkToEmail(email, {
@@ -94,14 +74,9 @@ export default function SignIn() {
     }
   };
 
-  if (url && url.startsWith("https://app.cowork.sauray.net/sign-in")) {
-    auth()
-      .signInWithEmailLink(email, url)
-      .then((result) => {
-        result && console.log(result);
-        router.replace("/homepage");
-      });
-    return <Skeleton className="h-16 w-72 rounded-3xl" />;
+  if (url && email && url.startsWith("https://cowork-app.sauray.net/sign-in")) {
+    console.log("signing in with email link: ", email);
+    auth().signInWithEmailLink(email, url);
   } else {
     return (
       <SafeAreaView
@@ -111,22 +86,36 @@ export default function SignIn() {
         <Logo />
         <KeyboardAvoidingView
           className="w-full"
+          keyboardVerticalOffset={height + 47}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          enabled={false}
         >
-          <Input
-            className="w-full"
-            textContentType="emailAddress"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholder="Email"
-            value={email}
-            onChangeText={(text) => setEmail(text)}
-          />
+          <View className="m-4 gap-4">
+            <Input
+              className="w-full"
+              textContentType="emailAddress"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="Email"
+              value={email}
+              onChangeText={(text) => setEmail(text)}
+            />
+            {email === testEmailAddress && (
+              <Input
+                className="w-full"
+                textContentType="password"
+                autoCapitalize="none"
+                placeholder="Password"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                }}
+              />
+            )}
+            <Button onPress={() => signIn()}>
+              <Text>Se connecter</Text>
+            </Button>
+          </View>
         </KeyboardAvoidingView>
-        <Button className="w-full m-4" onPress={() => sendSignInLink(email)}>
-          <Text>Se connecter</Text>
-        </Button>
       </SafeAreaView>
     );
   }

@@ -47,7 +47,7 @@ export const NotificationsView = ({
           setRefreshing(false);
         })
         .catch((error) => {
-          console.log(error);
+          console.log("notifications view", error);
           setRefreshing(false);
         });
   };

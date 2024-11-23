@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "CoworkRentalMobile.app"
-               BlueprintName = "CoworkRentalMobile"
-               ReferencedContainer = "container:CoworkRentalMobile.xcodeproj">
+               BuildableName = "BonCowork.app"
+               BlueprintName = "BonCowork"
+               ReferencedContainer = "container:BonCowork.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "CoworkRentalMobileTests.xctest"
-               BlueprintName = "CoworkRentalMobileTests"
-               ReferencedContainer = "container:CoworkRentalMobile.xcodeproj">
+               BuildableName = "BonCoworkTests.xctest"
+               BlueprintName = "BonCoworkTests"
+               ReferencedContainer = "container:BonCowork.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "CoworkRentalMobile.app"
-            BlueprintName = "CoworkRentalMobile"
-            ReferencedContainer = "container:CoworkRentalMobile.xcodeproj">
+            BuildableName = "BonCowork.app"
+            BlueprintName = "BonCowork"
+            ReferencedContainer = "container:BonCowork.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "CoworkRentalMobile.app"
-            BlueprintName = "CoworkRentalMobile"
-            ReferencedContainer = "container:CoworkRentalMobile.xcodeproj">
+            BuildableName = "BonCowork.app"
+            BlueprintName = "BonCowork"
+            ReferencedContainer = "container:BonCowork.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

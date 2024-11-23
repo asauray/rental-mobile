@@ -1,31 +1,37 @@
 {
   "expo": {
-    "name": "CoworkRentalMobile",
-    "slug": "CoworkRentalMobile",
+    "name": "Bon Cowork",
+    "slug": "BonCowork",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "icon": "./assets/images/Logo_App_IOS_Ordinateur.png",
+    "scheme": "boncowork",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000"
     },
     "ios": {
+      "entitlements": {
+        "aps-environment": "production"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "supportsTablet": true,
       "bundleIdentifier": "net.sauray.booking.cowork",
       "associatedDomains": [
         "applinks:app.cowork.sauray.net?mode=<alternate mode>",
-        "applinks:cowork.sauray.net?mode=<alternate mode>",
         "applinks:app.cowork.sauray.net?mode=developer",
-        "applinks:cowork-booking-1354e.firebaseapp.com?mode=developer"
+        "applinks:cowork-app.sauray.net",
+        "applinks:app.cowork.sauray.net"
       ],
       "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/Logo_App_IOS_Ordinateur.png",
         "backgroundColor": "#ffffff"
       },
       "package": "net.sauray.booking.cowork",
@@ -55,7 +61,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "94efa063-1bbc-41cb-852c-1d3a73fd5f0e"
+        "projectId": "c3006282-3bc0-4b89-a3bb-64e9c4413d1f"
       }
     }
   }

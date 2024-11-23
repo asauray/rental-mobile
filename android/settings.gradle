@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'CoworkRentalMobile'
+rootProject.name = 'Bon Cowork'
 
 dependencyResolutionManagement {
   versionCatalogs {

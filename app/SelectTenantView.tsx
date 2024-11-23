@@ -11,9 +11,11 @@ import { useContext, useEffect, useState } from "react";
 import { RentalApi, Tenant } from "./api/rental_api";
 import { TenantContext } from "./TenantContextProvider";
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "@/components/ui/text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 interface SelectTenantViewProps {
   user: FirebaseAuthTypes.User;
@@ -31,23 +33,30 @@ export const SelectTenantView = ({ user }: SelectTenantViewProps) => {
     right: 12,
   };
 
-  useEffect(() => {
+  const reload = () => {
+    setTenants(undefined);
     RentalApi.fetchMyTenants(user, () => auth().signOut())
       .then((myTenantsResponse) => {
         console.log(myTenantsResponse);
         setTenants(myTenantsResponse.tenants);
       })
       .catch((err) => {
-        console.log(err);
+        console.log("unable to fetch tenants", err);
       });
+  };
+  useEffect(() => {
+    console.log("fetching tenants");
+    reload();
   }, []);
   if (tenants) {
     if (tenants.length > 0) {
+      const tenantId = tenant || tenants[0].id;
       return (
         <Select
+          className="w-full"
           defaultValue={{
-            value: String(tenant) || String(tenants[0].id),
-            label: tenants.find((t) => t.id === tenant)?.name ?? "inconnu",
+            value: String(tenantId),
+            label: tenants.find((t) => t.id === tenantId)?.name ?? "inconnu",
           }}
           onValueChange={(tenant) => {
             if (tenant) {
@@ -79,16 +88,28 @@ export const SelectTenantView = ({ user }: SelectTenantViewProps) => {
       );
     } else {
       return (
-        <View className="h-full flex justify-center items-center">
+        <View className="h-full gap-4 flex justify-center items-center">
           <Text>Vous n'avez aucun tenant.</Text>
+          <Button
+            variant="default"
+            onPress={() => {
+              reload();
+            }}
+          >
+            <Text>Recharger</Text>
+          </Button>
+          <Button
+            variant="secondary"
+            onPress={() => {
+              auth().signOut();
+            }}
+          >
+            <Text>Se déconnecter</Text>
+          </Button>
         </View>
       );
     }
   } else {
-    return (
-      <View>
-        <Skeleton className="h-16 w-72 rounded-3xl" />
-      </View>
-    );
+    return <Skeleton className="h-16 w-72 rounded-3xl m-auto" />;
   }
 };

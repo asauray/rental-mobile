@@ -29,7 +29,9 @@ export interface Reservations {
   previous: string;
   next: string;
 }
-
+export interface AllProductUnitResponse {
+  units: ProductUnit[];
+}
 export interface ProductUnit {
   id: number;
   model: Model;
@@ -67,7 +69,121 @@ export interface Tenant {
 export interface MyTenantsResponse {
   tenants: Tenant[];
 }
+
+export interface ImageSet {
+  image1: string;
+  image2: string;
+  image3: string;
+  image4: string;
+}
+
+export interface OpenHours {
+  open: string;
+  close: string;
+}
+
+export interface Brand {
+  id: number;
+  brand: string;
+  logo: string;
+  human_readable_id: string;
+  image_set: ImageSet;
+  business: string;
+  open_hours: {
+    monday: OpenHours;
+    tuesday: OpenHours;
+    wednesday: OpenHours;
+    thursday: OpenHours;
+    friday: OpenHours;
+    saturday: OpenHours;
+    sunday: OpenHours;
+  };
+  tenant_id: number;
+}
+
+export interface BrandsResponse {
+  brands: Brand[];
+}
+
 export const RentalApi = {
+  submitPushToken: (
+    deviceId: string,
+    expoToken: string,
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/me/devices`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          method: "POST",
+          body: JSON.stringify({
+            device_id: deviceId,
+            expo_push_token: expoToken,
+          }),
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        })
+      )
+      .then((response) => {
+        console.log(response.status);
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return {};
+      });
+  },
+  fetchAllUnits: (
+    brandId: number,
+    tenant: number,
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/rooms/units?brandId=${brandId}`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Tenant-id": `${tenant}`,
+          },
+        })
+      )
+      .then((response) => {
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .then((data) => data as AllProductUnitResponse);
+  },
+  fetchBrands: (
+    tenant: number,
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/admin/rooms/brands`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Tenant-id": `${tenant}`,
+          },
+        })
+      )
+      .then((response) => {
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .then((data) => data as BrandsResponse);
+  },
   replyToReservation: (
     reservationId: number,
     response: "accept" | "reject" | "cancel",
@@ -95,6 +211,8 @@ export const RentalApi = {
         if (response.status == 401 || response.status == 403) {
           return signOut();
         }
+        // add 1s of delay to ensure the response is processed
+        return new Promise((r) => setTimeout(r, 1000));
       })
       .catch((error) => {
         console.log("fuck");
@@ -116,7 +234,8 @@ export const RentalApi = {
         })
       )
       .then((response) => {
-        if (response.status == 401 || response.status == 403) {
+        if (response.status === 401 || response.status === 403) {
+          console.log("signin out");
           return signOut();
         }
         return response.json();
@@ -141,7 +260,10 @@ export const RentalApi = {
         })
       )
       .then((response) => {
+        console.log("tenant", tenant);
+        console.log("fetchUnitById(" + unitId + " response", response.status);
         if (response.status == 401 || response.status == 403) {
+          console.log("signin out");
           return signOut();
         }
         return response.json();
@@ -180,12 +302,13 @@ export const RentalApi = {
       )
       .then((response) => {
         if (response.status == 401 || response.status == 403) {
+          console.log("signin out");
           return signOut();
         }
         return response.json();
       })
       .then((data) => {
-        console.log(data);
+        console.log(JSON.stringify(data));
         return data;
       })
       .then((data) => data as Reservations);
