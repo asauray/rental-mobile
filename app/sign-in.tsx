@@ -15,10 +15,11 @@ import * as Linking from "expo-linking";
 import { Button } from "@/components/ui/button";
 import { Text } from "~/components/ui/text";
 import * as Burnt from "burnt";
-import { router } from "expo-router";
+import { router, useNavigation, useNavigationContainerRef } from "expo-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { UserContext } from "./UserContextProvider";
+import { CommonActions } from "@react-navigation/native";
 
 const styles = StyleSheet.create({
   authContainer: {
@@ -72,7 +73,7 @@ export default function SignIn() {
       .signInWithEmailLink(email, url)
       .then((user) => {
         setUser(user.user);
-        router.replace("/homepage");
+        router.replace("/");
       });
   } else {
     return (
@@ -81,7 +82,7 @@ export default function SignIn() {
         className="flex justify-center items-center gap-4 m-4"
       >
         {emailSent && (
-          <View className="space-y-4">
+          <View className="gap-4">
             <Logo />
             <Text>Regardez dans votre boite mail pour vous connecter.</Text>
             <Button onPress={() => signIn()}>

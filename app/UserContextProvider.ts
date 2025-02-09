@@ -3,11 +3,11 @@ import { createContext, ReactNode, useContext, useState } from "react";
 
 interface UserContextValue {
   user: FirebaseAuthTypes.User | null;
-  setUser: (user: FirebaseAuthTypes.User) => void;
+  setUser: (user: FirebaseAuthTypes.User | null) => void;
 }
 const UserContext = createContext<UserContextValue>({
   user: null,
-  setUser: (user: FirebaseAuthTypes.User) => {},
+  setUser: (newUser: FirebaseAuthTypes.User | null) => {},
 });
 
 const useUserContext = () => {

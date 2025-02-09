@@ -86,143 +86,11 @@ export default function RootLayout() {
   const { user } = React.useContext(UserContext);
   const { tenant } = React.useContext(TenantContext);
 
-  function onAuthStateChanged(newUser) {
-    console.log(`onAuthStateChanged: ${newUser}`);
-    if (!initializing && !newUser) {
-      AsyncStorage.clear();
-      router.replace("/sign-in");
-    } else if (!initializing && newUser) {
-      if (tenant) {
-        router.replace("/homepage");
-      } else {
-        router.replace("/select-tenant");
-      }
-      console.log("new user logged in");
-      newUser.getIdToken().then((token) => {
-        console.log(token);
-      });
-    }
-    console.log("set new user: ", user);
-    thisSetUser(user);
+  function onAuthStateChanged(newUser: FirebaseAuthTypes.User | null) {
+    console.log(`onAuthStateChanged: ${newUser ? newUser.email : "null"}`);
+    thisSetUser(newUser);
     if (initializing) setInitializing(false);
   }
-
-  const [expoPushToken, setExpoPushToken] = React.useState("");
-  const [notification, setNotification] = React.useState<
-    Notifications.Notification | undefined
-  >(undefined);
-  const notificationListener = React.useRef<Notifications.Subscription>();
-  const responseListener = React.useRef<Notifications.Subscription>();
-
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
-  });
-
-  function handleRegistrationError(errorMessage: string) {
-    alert(errorMessage);
-    throw new Error(errorMessage);
-  }
-
-  async function registerForPushNotificationsAsync() {
-    if (Platform.OS === "android") {
-      Notifications.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#FF231F7C",
-      });
-    }
-    console.log("is device: ", Device.isDevice);
-    if (Device.isDevice) {
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      console.log("final status:", finalStatus);
-      if (existingStatus !== "granted") {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      if (finalStatus !== "granted") {
-        handleRegistrationError(
-          "Permission not granted to get push token for push notification!"
-        );
-        return;
-      }
-      const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ??
-        Constants?.easConfig?.projectId;
-      if (!projectId) {
-        handleRegistrationError("Project ID not found");
-      }
-      try {
-        const pushTokenString = (
-          await Notifications.getExpoPushTokenAsync({
-            projectId,
-          })
-        ).data;
-        console.log("push token string");
-        console.log(pushTokenString);
-        return pushTokenString;
-      } catch (e: unknown) {
-        handleRegistrationError(`${e}`);
-      }
-    } else {
-      console.log("Must use physical device for push notifications");
-    }
-  }
-
-  React.useEffect(() => {
-    console.log("submitting user token");
-    if (user) {
-      console.log("submitting user token: user logged in");
-      registerForPushNotificationsAsync()
-        .then(async (token) => {
-          console.log("got token: ", token);
-          if (token) {
-            const deviceId = await DeviceInfo.getUniqueId();
-            RentalApi.submitPushToken(
-              deviceId,
-              token,
-              user,
-              async () => {}
-            ).then(() => {
-              console.log("push token submitted");
-              setExpoPushToken(token);
-            });
-          } else {
-            setExpoPushToken("");
-          }
-        })
-        .catch((error: any) => {
-          console.log("unable to send expo token", error);
-          setExpoPushToken(`${error}`);
-        });
-      notificationListener.current =
-        Notifications.addNotificationReceivedListener((notification) => {
-          setNotification(notification);
-        });
-
-      responseListener.current =
-        Notifications.addNotificationResponseReceivedListener((response) => {
-          console.log(response);
-        });
-
-      return () => {
-        notificationListener.current &&
-          Notifications.removeNotificationSubscription(
-            notificationListener.current
-          );
-        responseListener.current &&
-          Notifications.removeNotificationSubscription(
-            responseListener.current
-          );
-      };
-    }
-  }, [user]);
 
   React.useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
@@ -291,10 +159,12 @@ export default function RootLayout() {
           }}
         >
           <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-          <Stack initialRouteName="homepage">
-            <Stack.Screen name="index" options={{ title: "Index" }} />
+          <Stack
+            initialRouteName="index"
+            screenOptions={{ headerTitle: "Home" }}
+          >
+            {/* <Stack.Screen name="index" options={{ title: "Index" }} /> */}
             <Stack.Screen name="sign-in" options={{ title: "Connection" }} />
-            <Stack.Screen name="homepage" options={{ title: "Home" }} />
             <Stack.Screen
               name="select-tenant"
               options={{ title: "Select Tenant" }}
