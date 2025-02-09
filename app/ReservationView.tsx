@@ -116,3 +116,4 @@ export const ReservationView = (props: ReservationViewProps) => {
     <Skeleton className="h-12 w-12 rounded-full" />
   );
 };
+export default ReservationView;

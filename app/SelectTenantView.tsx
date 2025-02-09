@@ -41,7 +41,7 @@ export const SelectTenantView = ({ user }: SelectTenantViewProps) => {
         setTenants(myTenantsResponse.tenants);
       })
       .catch((err) => {
-        console.log("unable to fetch tenants", err);
+        console.log("unable to fetch tenants", JSON.stringify(err));
       });
   };
   useEffect(() => {

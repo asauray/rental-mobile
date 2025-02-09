@@ -224,6 +224,7 @@ export const RentalApi = {
     signOut: () => Promise<void>
   ) => {
     const url = `${rootUrl}/api/v1/me/tenants`;
+    console.log("url is ", url);
     return user
       .getIdToken()
       .then((idToken) =>
@@ -234,11 +235,18 @@ export const RentalApi = {
         })
       )
       .then((response) => {
-        if (response.status === 401 || response.status === 403) {
+        if (response.status >= 200 && response.status < 300) {
+          return response.json();
+        } else if (response.status === 401 || response.status === 403) {
           console.log("signin out");
           return signOut();
+        } else {
+          console.log(
+            "unhandled error on fetchMyTenants, http=",
+            response.statusText
+          );
+          return signOut();
         }
-        return response.json();
       })
       .then((data) => data as MyTenantsResponse);
   },

@@ -17,17 +17,49 @@ import { RentalApi } from "./api/rental_api";
 import DeviceInfo from "react-native-device-info";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createStaticNavigation } from "@react-navigation/native";
-import Home from "./homepage";
-import SignIn from "./sign-in";
 
 const LIGHT_THEME: Theme = {
   dark: false,
+  fonts: {
+    regular: {
+      fontFamily: "System",
+      fontWeight: "400",
+    },
+    medium: {
+      fontFamily: "System",
+      fontWeight: "500",
+    },
+    bold: {
+      fontFamily: "System",
+      fontWeight: "700",
+    },
+    heavy: {
+      fontFamily: "System",
+      fontWeight: "800",
+    },
+  },
   colors: NAV_THEME.light,
 };
 const DARK_THEME: Theme = {
   dark: true,
+  fonts: {
+    regular: {
+      fontFamily: "System",
+      fontWeight: "400",
+    },
+    medium: {
+      fontFamily: "System",
+      fontWeight: "500",
+    },
+    bold: {
+      fontFamily: "System",
+      fontWeight: "700",
+    },
+    heavy: {
+      fontFamily: "System",
+      fontWeight: "800",
+    },
+  },
   colors: NAV_THEME.dark,
 };
 
@@ -51,14 +83,22 @@ export default function RootLayout() {
   );
 
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
+  const { user } = React.useContext(UserContext);
+  const { tenant } = React.useContext(TenantContext);
 
-  function onAuthStateChanged(user) {
-    if (!initializing && !user) {
+  function onAuthStateChanged(newUser) {
+    console.log(`onAuthStateChanged: ${newUser}`);
+    if (!initializing && !newUser) {
       AsyncStorage.clear();
       router.replace("/sign-in");
-    } else if (!initializing && user) {
-      router.replace("/homepage");
-      user.getIdToken().then((token) => {
+    } else if (!initializing && newUser) {
+      if (tenant) {
+        router.replace("/homepage");
+      } else {
+        router.replace("/select-tenant");
+      }
+      console.log("new user logged in");
+      newUser.getIdToken().then((token) => {
         console.log(token);
       });
     }
@@ -66,8 +106,6 @@ export default function RootLayout() {
     thisSetUser(user);
     if (initializing) setInitializing(false);
   }
-
-  const { user } = React.useContext(UserContext);
 
   const [expoPushToken, setExpoPushToken] = React.useState("");
   const [notification, setNotification] = React.useState<
@@ -223,23 +261,7 @@ export default function RootLayout() {
   if (!isColorSchemeLoaded) {
     return null;
   }
-  const RootStack = createNativeStackNavigator({
-    screens: {
-      Home: {
-        if: true,
-        screen: Home,
-      },
-      SignIn: {
-        if: false,
-        screen: SignIn,
-        options: {
-          title: "Sign in",
-        },
-      },
-    },
-  });
 
-  const Navigation = createStaticNavigation(RootStack);
   return (
     <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
       <TenantContext.Provider
@@ -269,10 +291,14 @@ export default function RootLayout() {
           }}
         >
           <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-          <Stack initialRouteName="index">
+          <Stack initialRouteName="homepage">
             <Stack.Screen name="index" options={{ title: "Index" }} />
             <Stack.Screen name="sign-in" options={{ title: "Connection" }} />
             <Stack.Screen name="homepage" options={{ title: "Home" }} />
+            <Stack.Screen
+              name="select-tenant"
+              options={{ title: "Select Tenant" }}
+            />
             <Stack.Screen name="brands/[id]" options={{ title: "Espaces" }} />
           </Stack>
           <PortalHost />

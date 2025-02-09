@@ -87,7 +87,7 @@ export default function Index() {
   const responseListener = useRef<Notifications.Subscription>();
 
   useEffect(() => {
-    console.log("submitting user token");
+    console.log(`submitting user token, user=${user}`);
     if (user) {
       console.log("submitting user token: user logged in");
       registerForPushNotificationsAsync()
@@ -135,8 +135,8 @@ export default function Index() {
     }
   }, [user]);
   if (user) {
-    router.replace("/homepage");
+    return <Home />;
   } else {
-    router.replace("/sign-in");
+    return <SignIn />;
   }
 }

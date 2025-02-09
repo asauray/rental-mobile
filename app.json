@@ -7,6 +7,7 @@
     "icon": "./assets/images/Logo_App_IOS_Ordinateur.png",
     "scheme": "boncowork",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
@@ -22,10 +23,12 @@
       "supportsTablet": true,
       "bundleIdentifier": "net.sauray.booking.cowork",
       "associatedDomains": [
-        "applinks:app.cowork.sauray.net?mode=<alternate mode>",
-        "applinks:app.cowork.sauray.net?mode=developer",
-        "applinks:cowork-app.sauray.net",
-        "applinks:app.cowork.sauray.net"
+        "applinks:api.boncowork.com",
+        "applinks:api.boncowork.com?mode=<alternate mode>",
+        "applinks:api.boncowork.com?mode=developer",
+        "applinks:boncowork.com",
+        "applinks:boncowork.com?mode=<alternate mode>",
+        "applinks:boncowork.com?mode=developer"
       ],
       "googleServicesFile": "./GoogleService-Info.plist"
     },
@@ -54,7 +57,8 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
