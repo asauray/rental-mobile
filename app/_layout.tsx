@@ -143,6 +143,7 @@ export default function RootLayout() {
                   console.log("new tenant: " + tenant);
                 });
                 thisSetTenant(tenant);
+                router.replace("/");
               })
               .catch((error) => {
                 console.log(error);
@@ -163,8 +164,18 @@ export default function RootLayout() {
             initialRouteName="index"
             screenOptions={{ headerTitle: "Home" }}
           >
-            {/* <Stack.Screen name="index" options={{ title: "Index" }} /> */}
-            <Stack.Screen name="sign-in" options={{ title: "Connection" }} />
+            <Stack.Screen
+              name="sign-in"
+              options={{ headerTitle: "Connection" }}
+            />
+            <Stack.Screen
+              name="me/stripe-return"
+              options={{ headerTitle: "Stripe" }}
+            />
+            <Stack.Screen
+              name="me/stripe-refresh"
+              options={{ title: "Stripe" }}
+            />
             <Stack.Screen
               name="select-tenant"
               options={{ title: "Select Tenant" }}

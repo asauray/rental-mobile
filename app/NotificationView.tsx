@@ -101,6 +101,8 @@ export const NotificationsView = ({
         <CardHeader>
           <CardTitle>{reservation[0].customer_first_name}</CardTitle>
           <CardDescription>Total: {total}.00 €</CardDescription>
+          <P>{reservation[0].customer_email}</P>
+          <P>{reservation[0].customer_phone_number}</P>
         </CardHeader>
         <CardContent className="gap-4 native:gap-2">
           {reservation.map((r) => {

@@ -37,9 +37,15 @@
           <string>com.googleusercontent.apps.1017646563345-oglf9feo97ih6bj9cmgmfm2jq3m0gs7j</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+boncowork</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>2</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSMinimumSystemVersion</key>

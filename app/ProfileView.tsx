@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Text } from "@/components/ui/text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
@@ -9,6 +15,9 @@ import { Brand, RentalApi } from "./api/rental_api";
 import { SelectTenantView } from "./SelectTenantView";
 import { H4, P } from "@/components/ui/typography";
 import { router } from "expo-router";
+import * as Linking from "expo-linking";
+
+import * as WebBrowser from "expo-web-browser";
 
 export interface ProfileViewProps {
   tenant: number;
@@ -32,6 +41,9 @@ export const ProfileView = ({ tenant, user }: ProfileViewProps) => {
       }
     );
   }, []);
+
+  const [stripeButtonProgress, setStripeButtonProgress] = useState(false);
+
   return (
     <ScrollView>
       <View className="p-4 gap-4 h-full flex justify-between items-center">
@@ -73,6 +85,28 @@ export const ProfileView = ({ tenant, user }: ProfileViewProps) => {
             ))}
           </CardContent>
         </Card>
+        <Button
+          className="w-full"
+          onPress={() => {
+            setStripeButtonProgress(true);
+            RentalApi.setupStripeAccount(user, tenant, () => auth().signOut())
+              .then(async (response) => {
+                const url = response.url;
+                let result = await WebBrowser.openAuthSessionAsync(url);
+                setStripeButtonProgress(false);
+              })
+              .catch((err) => {
+                setStripeButtonProgress(false);
+              });
+          }}
+        >
+          {stripeButtonProgress ? (
+            <ActivityIndicator />
+          ) : (
+            <Text>Configurer Stripe</Text>
+          )}
+        </Button>
+
         <Button
           className="w-full"
           onPress={() => {

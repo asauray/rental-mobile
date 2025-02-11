@@ -38,13 +38,17 @@ export const ReservationView = (props: ReservationViewProps) => {
 
   return unit ? (
     <Card>
-      <CardHeader className="flex flex-row justify-between items-center">
+      <CardHeader className="flex flex-row justify-between items-start">
         <View>
           <CardTitle>{props.reservation.customer_first_name}</CardTitle>
-          <View className="flex flex-row justify-between">
+          <View className="flex flex-col justify-between gap-4">
             <Muted>
               {unit.model.brand} - {unit.model.name}
             </Muted>
+            <View>
+              <P>{props.reservation.customer_email}</P>
+              <P>{props.reservation.customer_phone_number}</P>
+            </View>
           </View>
         </View>
         <P>{props.reservation.formatted_price}</P>

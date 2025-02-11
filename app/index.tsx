@@ -37,6 +37,9 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import DeviceInfo from "react-native-device-info";
 
+import * as amplitude from "@amplitude/analytics-react-native";
+amplitude.init("0e1b5f251b9dd40685d0188a6ee4f22f");
+
 const weekOfYear = require("dayjs/plugin/weekOfYear");
 dayjs.extend(weekOfYear);
 

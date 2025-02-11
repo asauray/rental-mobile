@@ -23,11 +23,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "net.sauray.booking.cowork",
       "associatedDomains": [
-        "applinks:api.boncowork.com",
-        "applinks:api.boncowork.com?mode=<alternate mode>",
         "applinks:api.boncowork.com?mode=developer",
-        "applinks:boncowork.com",
-        "applinks:boncowork.com?mode=<alternate mode>",
         "applinks:boncowork.com?mode=developer"
       ],
       "googleServicesFile": "./GoogleService-Info.plist"

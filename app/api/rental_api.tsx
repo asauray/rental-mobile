@@ -1,7 +1,9 @@
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import Config from "react-native-config";
 
-const rootUrl = Config.API_ROOT_URL;
+//const rootUrl = Config.API_ROOT_URL;
+const rootUrl = "http://192.168.1.26:8080";
+
 export interface Rental {
   id: number;
   state: string;
@@ -105,7 +107,37 @@ export interface BrandsResponse {
   brands: Brand[];
 }
 
+export interface SetupStripeAccountResponse {
+  url: string;
+}
+
 export const RentalApi = {
+  setupStripeAccount: (
+    user: FirebaseAuthTypes.User,
+    tenant: number,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/me/setup_stripe_account`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Tenant-id": `${tenant}`,
+          },
+        })
+      )
+      .then((response) => {
+        console.log(response.status);
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .then((data) => data as SetupStripeAccountResponse);
+  },
   submitPushToken: (
     deviceId: string,
     expoToken: string,
