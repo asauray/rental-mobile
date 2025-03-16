@@ -1,13 +1,12 @@
-import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import { useLocalSearchParams } from "expo-router";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { Brand, ProductUnit, RentalApi } from "../api/rental_api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { H1, H2, H4, P } from "@/components/ui/typography";
-import { TenantContext } from "../TenantContextProvider";
 import { Image, StyleSheet } from "react-native";
 import auth from "@react-native-firebase/auth";
+import { useTenantContext } from "../hooks/TenantContextProvider";
 
 const styles = StyleSheet.create({
   brandImage: {
@@ -24,7 +23,7 @@ const styles = StyleSheet.create({
 
 export interface CoworkViewProps {}
 export default function CoworkView({}: CoworkViewProps) {
-  const { tenant } = useContext(TenantContext);
+  const { tenant } = useTenantContext();
   const user = auth().currentUser;
   const { id } = useLocalSearchParams();
   const idNum = parseInt(id as string);

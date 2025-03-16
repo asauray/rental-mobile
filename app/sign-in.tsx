@@ -14,12 +14,9 @@ import {
 import * as Linking from "expo-linking";
 import { Button } from "@/components/ui/button";
 import { Text } from "~/components/ui/text";
-import * as Burnt from "burnt";
-import { router, useNavigation, useNavigationContainerRef } from "expo-router";
-import { Skeleton } from "@/components/ui/skeleton";
+import { router } from "expo-router";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { UserContext } from "./UserContextProvider";
-import { CommonActions } from "@react-navigation/native";
+import { useUserContext } from "./hooks/UserContextProvider";
 
 const styles = StyleSheet.create({
   authContainer: {
@@ -34,7 +31,7 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailSent, setEmailSent] = useState(false);
-  const { setUser } = useContext(UserContext);
+  const { setUser } = useUserContext();
 
   const url = Linking.useURL();
   const height = useHeaderHeight();

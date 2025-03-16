@@ -9,10 +9,6 @@ const TenantContext = createContext<TenantContextValue>({
   setTenant: (tenant: number) => {},
 });
 
-interface TenantContextProviderProps {
-  children: ReactNode;
-}
-
 const useTenantContext = () => {
   const context = useContext(TenantContext);
 

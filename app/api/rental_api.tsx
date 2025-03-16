@@ -1,8 +1,7 @@
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import Config from "react-native-config";
 
-//const rootUrl = Config.API_ROOT_URL;
-const rootUrl = "http://192.168.1.26:8080";
+const rootUrl = "http://192.168.1.34:8080"; //Config.API_ROOT_URL;
 
 export interface Rental {
   id: number;
@@ -112,6 +111,32 @@ export interface SetupStripeAccountResponse {
 }
 
 export const RentalApi = {
+  fetchRentalById: (
+    user: FirebaseAuthTypes.User,
+    tenant: number,
+    rentalId: string,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/me/reservations/${rentalId}`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Tenant-id": `${tenant}`,
+          },
+        })
+      )
+      .then((response) => {
+        console.log(response.status);
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .then((data) => data as Rental);
+  },
   setupStripeAccount: (
     user: FirebaseAuthTypes.User,
     tenant: number,

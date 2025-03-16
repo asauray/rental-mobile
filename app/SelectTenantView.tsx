@@ -9,13 +9,13 @@ import {
 } from "@/components/ui/select";
 import { useContext, useEffect, useState } from "react";
 import { RentalApi, Tenant } from "./api/rental_api";
-import { TenantContext } from "./TenantContextProvider";
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import { View } from "react-native";
 import { Text } from "@/components/ui/text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useTenantContext } from "./hooks/TenantContextProvider";
 
 interface SelectTenantViewProps {
   user: FirebaseAuthTypes.User;
@@ -23,7 +23,7 @@ interface SelectTenantViewProps {
 
 export const SelectTenantView = ({ user }: SelectTenantViewProps) => {
   const [tenants, setTenants] = useState<Tenant[] | undefined>(undefined);
-  const { tenant, setTenant } = useContext(TenantContext);
+  const { tenant, setTenant } = useTenantContext();
 
   const insets = useSafeAreaInsets();
   const contentInsets = {
@@ -39,6 +39,9 @@ export const SelectTenantView = ({ user }: SelectTenantViewProps) => {
       .then((myTenantsResponse) => {
         console.log(myTenantsResponse);
         setTenants(myTenantsResponse.tenants);
+        if (myTenantsResponse.tenants.length == 1) {
+          setTenant(myTenantsResponse.tenants[0].id);
+        }
       })
       .catch((err) => {
         console.log("unable to fetch tenants", JSON.stringify(err));

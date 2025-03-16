@@ -9,14 +9,9 @@ import { Platform } from "react-native";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/useColorScheme";
 import { PortalHost } from "@rn-primitives/portal";
-import { TenantContext } from "./TenantContextProvider";
-import { UserContext } from "./UserContextProvider";
+import { TenantContext, useTenantContext } from "./hooks/TenantContextProvider";
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
-import * as Notifications from "expo-notifications";
-import { RentalApi } from "./api/rental_api";
-import DeviceInfo from "react-native-device-info";
-import * as Device from "expo-device";
-import Constants from "expo-constants";
+import { UserContext, useUserContext } from "./hooks/UserContextProvider";
 
 const LIGHT_THEME: Theme = {
   dark: false,
@@ -83,8 +78,8 @@ export default function RootLayout() {
   );
 
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
-  const { user } = React.useContext(UserContext);
-  const { tenant } = React.useContext(TenantContext);
+  const { user } = useUserContext();
+  const { tenant } = useTenantContext();
 
   function onAuthStateChanged(newUser: FirebaseAuthTypes.User | null) {
     console.log(`onAuthStateChanged: ${newUser ? newUser.email : "null"}`);
@@ -164,6 +159,10 @@ export default function RootLayout() {
             initialRouteName="index"
             screenOptions={{ headerTitle: "Home" }}
           >
+            <Stack.Screen
+              name="/routes/rental-details"
+              options={{ headerTitle: "Details" }}
+            />
             <Stack.Screen
               name="sign-in"
               options={{ headerTitle: "Connection" }}

@@ -6,8 +6,8 @@
     <string>production</string>
     <key>com.apple.developer.associated-domains</key>
     <array>
-      <string>applinks:api.boncowork.com?mode=developer</string>
-      <string>applinks:boncowork.com?mode=developer</string>
+      <string>applinks:api.boncowork.com</string>
+      <string>applinks:boncowork.com</string>
     </array>
   </dict>
 </plist>

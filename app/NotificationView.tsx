@@ -1,7 +1,7 @@
 import React from "react";
 import { ProductUnit, Rental, RentalApi, Reservations } from "./api/rental_api";
 import auth, { FirebaseAuthTypes, reload } from "@react-native-firebase/auth";
-import { FlatList, RefreshControl, View } from "react-native";
+import { Alert, FlatList, RefreshControl, View } from "react-native";
 import { Skeleton } from "@/components/ui/skeleton";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { H4, P } from "@/components/ui/typography";
@@ -143,14 +143,33 @@ export const NotificationsView = ({
           <Button
             variant="secondary"
             onPress={() => {
+              Alert.prompt(
+                "Refuser la réservation",
+                "Etes-vous sur de bien vouloir refuser la réservation",
+                [
+                  {
+                    isPreferred: false,
+                    text: "Retour",
+                  },
+                  {
+                    isPreferred: false,
+                    text: "Confirmer",
+                    onPress: () => {
+                      console.log(
+                        "replying to reservation: " + reservation[0].id
+                      );
+                      RentalApi.replyToReservation(
+                        reservation[0].id,
+                        "reject",
+                        tenant,
+                        currentUser,
+                        () => auth().signOut()
+                      ).then(() => reloadData());
+                    },
+                  },
+                ]
+              );
               console.log("replying to reservation: " + reservation[0].id);
-              RentalApi.replyToReservation(
-                reservation[0].id,
-                "reject",
-                tenant,
-                currentUser,
-                () => auth().signOut()
-              ).then(() => reloadData());
             }}
           >
             <Text>Refuser</Text>

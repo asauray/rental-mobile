@@ -19,7 +19,6 @@ import { Text } from "@/components/ui/text";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import auth from "@react-native-firebase/auth";
 import { ProfileView } from "./ProfileView";
-import { TenantContext } from "./TenantContextProvider";
 import { SelectTenantView } from "./SelectTenantView";
 import {
   Accordion,
@@ -30,7 +29,7 @@ import {
 import { WeekSelectorView } from "./WeekSelectorView";
 import { ReservationView } from "./ReservationView";
 import { NotificationsView } from "./NotificationView";
-import { UserContext } from "./UserContextProvider";
+import { UserContext } from "./hooks/UserContextProvider";
 import { Redirect, router } from "expo-router";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
@@ -38,6 +37,7 @@ import Constants from "expo-constants";
 import DeviceInfo from "react-native-device-info";
 
 import * as amplitude from "@amplitude/analytics-react-native";
+import { useTenantContext } from "./hooks/TenantContextProvider";
 amplitude.init("0e1b5f251b9dd40685d0188a6ee4f22f");
 
 const weekOfYear = require("dayjs/plugin/weekOfYear");
@@ -105,7 +105,7 @@ async function registerForPushNotificationsAsync() {
 }
 
 export default function Home({}) {
-  const { tenant } = React.useContext(TenantContext);
+  const { tenant } = useTenantContext();
 
   const ReservationsView = (reservationProps: ReservationProps) => {
     const [from, setFrom] = React.useState<dayjs.Dayjs>(

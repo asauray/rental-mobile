@@ -14,6 +14,7 @@
       "backgroundColor": "#000"
     },
     "ios": {
+      "buildNumber": "1.0.0",
       "entitlements": {
         "aps-environment": "production"
       },
@@ -23,8 +24,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "net.sauray.booking.cowork",
       "associatedDomains": [
-        "applinks:api.boncowork.com?mode=developer",
-        "applinks:boncowork.com?mode=developer"
+        "applinks:api.boncowork.com",
+        "applinks:boncowork.com"
       ],
       "googleServicesFile": "./GoogleService-Info.plist"
     },
