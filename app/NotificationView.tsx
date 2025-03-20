@@ -35,7 +35,8 @@ export const NotificationsView = ({
     tenant &&
       currentUser &&
       RentalApi.fetchRentals(
-        undefined,
+        dayjs().subtract(1, "day").format(),
+        dayjs().add(12, "week").format(),
         ["pending_capture"],
         "purchase",
         tenant,

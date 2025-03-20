@@ -1,7 +1,9 @@
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import Config from "react-native-config";
+import { BusinessError } from "./business_error";
 
-const rootUrl = "http://192.168.1.34:8080"; //Config.API_ROOT_URL;
+const rootUrl = "http://192.168.1.34:8080";
+//const rootUrl = Config.API_ROOT_URL;
 
 export interface Rental {
   id: number;
@@ -268,8 +270,20 @@ export const RentalApi = {
         if (response.status == 401 || response.status == 403) {
           return signOut();
         }
-        // add 1s of delay to ensure the response is processed
-        return new Promise((r) => setTimeout(r, 1000));
+        if (response.status >= 400 && response.status < 500) {
+          const businessError = new BusinessError(
+            response.status,
+            response.statusText
+          );
+          throw businessError;
+        }
+        if (response.status >= 500 && response.status < 600) {
+          const serverError = new ServerError(
+            response.status,
+            response.statusText
+          );
+          throw serverError;
+        }
       })
       .catch((error) => {
         console.log("fuck");
@@ -337,6 +351,7 @@ export const RentalApi = {
   },
   fetchRentals: (
     fromDate: string | undefined,
+    toDate: string | undefined,
     states: string[] | undefined,
     groupBy: "day" | "purchase",
     tenant: number,
@@ -348,6 +363,9 @@ export const RentalApi = {
     queryParams["group_by"] = groupBy;
     if (fromDate) {
       queryParams["from_date_time"] = fromDate;
+    }
+    if (toDate) {
+      queryParams["to_date_time"] = toDate;
     }
     if (states) {
       queryParams["states"] = states.join(",");

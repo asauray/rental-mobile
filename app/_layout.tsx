@@ -131,6 +131,9 @@ export default function RootLayout() {
         value={{
           tenant: thisTenant,
           setTenant: (tenant) => {
+            if (tenant === thisTenant) {
+              return;
+            }
             console.log("Setting tenant: " + tenant);
             AsyncStorage.setItem("tenant", tenant.toString())
               .then(() => {

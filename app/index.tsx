@@ -30,7 +30,7 @@ import { WeekSelectorView } from "./WeekSelectorView";
 import { ReservationView } from "./ReservationView";
 import { NotificationsView } from "./NotificationView";
 import { UserContext } from "./hooks/UserContextProvider";
-import { Redirect, router } from "expo-router";
+import { Redirect, router, useFocusEffect } from "expo-router";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
@@ -38,6 +38,7 @@ import DeviceInfo from "react-native-device-info";
 
 import * as amplitude from "@amplitude/analytics-react-native";
 import { useTenantContext } from "./hooks/TenantContextProvider";
+import { Button } from "@/components/ui/button";
 amplitude.init("0e1b5f251b9dd40685d0188a6ee4f22f");
 
 const weekOfYear = require("dayjs/plugin/weekOfYear");
@@ -116,32 +117,44 @@ export default function Home({}) {
       Reservations | undefined
     >(undefined);
 
-    const reloadData = (fromDate: dayjs.Dayjs) => {
-      setRefreshing(true);
-      tenant &&
-        user &&
-        RentalApi.fetchRentals(
-          fromDate.format(),
-          reservationProps.states,
-          "day",
-          tenant,
-          user,
-          () => auth().signOut()
-        )
-          .then((newReservations) => {
-            setReservations(newReservations);
-            setRefreshing(false);
-          })
-          .catch((error) => {
-            console.log("rental error");
-            console.log(error);
-            setRefreshing(false);
-          });
-    };
+    const reloadData = React.useCallback(
+      (fromDate: dayjs.Dayjs) => {
+        setRefreshing(true);
+        tenant &&
+          user &&
+          RentalApi.fetchRentals(
+            fromDate.format(),
+            undefined,
+            reservationProps.states,
+            "day",
+            tenant,
+            user,
+            () => auth().signOut()
+          )
+            .then((newReservations) => {
+              setReservations(newReservations);
+              setRefreshing(false);
+            })
+            .catch((error) => {
+              console.log("rental error");
+              console.log(error);
+              setRefreshing(false);
+            });
+      },
+      [tenant, user, reservationProps.states]
+    );
 
     React.useEffect(() => {
       reloadData(from);
     }, [from]);
+
+    // Add focus effect to reload data when screen comes into focus
+    useFocusEffect(
+      React.useCallback(() => {
+        console.log("ReservationsView focused - reloading data");
+        reloadData(from);
+      }, [from, reloadData])
+    );
 
     const data =
       reservations?.bookings_grouped_by_day.map((group) => {
@@ -213,29 +226,25 @@ export default function Home({}) {
 
     return tenant && user && reservations ? (
       <SafeAreaView className="h-full">
-        <Accordion
-          type="single"
-          collapsible
-          defaultValue={undefined}
-          className="w-full max-w-sm native:max-w-md"
-        >
-          <AccordionItem value="item-1">
-            <AccordionTrigger className="flex justify-center items-center flex-wrap">
-              <Text className="basis-full text-center">{`Semaine ${from.week()}`}</Text>
-              <Muted>{`Du ${from.format("YYYY/MM/DD")} au ${from
-                ?.endOf("week")
-                .format("YYYY/MM/DD")}`}</Muted>
-            </AccordionTrigger>
-            <AccordionContent>
-              <WeekSelectorView
-                onSelect={(from, to) => {
-                  setFrom(from);
-                }}
-                initialDay={from}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        <View className="flex flex-row mt-4 ml-4 mr-4 justify-center items-center gap-4">
+          <Button
+            variant="outline"
+            onPress={() => setFrom(from.subtract(1, "week").startOf("week"))}
+          >
+            <Text>Precedent</Text>
+          </Button>
+          <View>
+            <Muted>{`Du ${from.format("YYYY/MM/DD")} au ${from
+              ?.endOf("week")
+              .format("YYYY/MM/DD")}`}</Muted>
+          </View>
+          <Button
+            variant="outline"
+            onPress={() => setFrom(from.add(1, "week").startOf("week"))}
+          >
+            <Text>Suivant</Text>
+          </Button>
+        </View>
         <SectionList
           ListEmptyComponent={() => (
             <View className="flex justify-center items-center w-full h-full gap-2">

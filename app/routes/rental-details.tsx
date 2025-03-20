@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RentalDetailView } from "../components/ui/RentalDetailView";
+import { RentalDetailView } from "../components/RentalDetailView";
 import { Rental, RentalApi } from "../api/rental_api";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -29,9 +29,9 @@ export default function RentalDetails() {
       });
     }
   }, [rentalId, user, tenant]);
-  return rental ? (
-    // ... in your component:
-    <RentalDetailView rental={rental} />
+
+  return rental && tenant && user ? (
+    <RentalDetailView rental={rental} tenant={tenant} currentUser={user} />
   ) : (
     <Skeleton className="w-full h-full" />
   );

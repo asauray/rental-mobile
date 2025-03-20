@@ -1,14 +1,26 @@
 import React from "react";
-import { View } from "react-native";
-import { Rental } from "../../api/rental_api";
+import { View, Linking } from "react-native";
+import { Rental, RentalApi } from "../api/rental_api";
 import { Text } from "@/components/ui/text";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import dayjs from "dayjs";
 import { Muted, P } from "@/components/ui/typography";
-import { Badge } from "./badge";
+import { Badge } from "../components/ui/badge";
+import { Button } from "@/components/ui/button";
+import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
+import { router } from "expo-router";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 interface RentalDetailViewProps {
   rental: Rental;
+  tenant: number;
+  currentUser: FirebaseAuthTypes.User;
 }
 
 const getStatusColor = (state: string) => {
@@ -24,7 +36,19 @@ const getStatusColor = (state: string) => {
   }
 };
 
-export const RentalDetailView = ({ rental }: RentalDetailViewProps) => {
+export const RentalDetailView = ({
+  rental,
+  tenant,
+  currentUser,
+}: RentalDetailViewProps) => {
+  const handleCall = () => {
+    Linking.openURL(`tel:${rental.customer_phone_number}`);
+  };
+
+  const handleEmail = () => {
+    Linking.openURL(`mailto:${rental.customer_email}`);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -42,8 +66,20 @@ export const RentalDetailView = ({ rental }: RentalDetailViewProps) => {
               <P>
                 {rental.customer_first_name} {rental.customer_last_name}
               </P>
-              <Muted>{rental.customer_email}</Muted>
-              <Muted>{rental.customer_phone_number}</Muted>
+              <View className="flex flex-row items-center justify-between mt-2">
+                <View className="flex-1">
+                  <Muted>{rental.customer_email}</Muted>
+                  <Muted>{rental.customer_phone_number}</Muted>
+                </View>
+                <View className="flex flex-row gap-2">
+                  <Button variant="outline" size="sm" onPress={handleCall}>
+                    <MaterialIcons name="phone" size={20} color="#000" />
+                  </Button>
+                  <Button variant="outline" size="sm" onPress={handleEmail}>
+                    <MaterialIcons name="email" size={20} color="#000" />
+                  </Button>
+                </View>
+              </View>
             </View>
           </View>
 
@@ -107,6 +143,28 @@ export const RentalDetailView = ({ rental }: RentalDetailViewProps) => {
           </View>
         </View>
       </CardContent>
+      {rental.state === "confirmed" && (
+        <CardFooter className="flex justify-end">
+          <Button
+            variant="destructive"
+            onPress={() => {
+              console.log("replying to reservation: " + rental.id);
+              RentalApi.replyToReservation(
+                rental.id,
+                "cancel",
+                tenant,
+                currentUser,
+                () => auth().signOut()
+              ).then(() => {
+                // Navigate back to previous screen
+                router.back();
+              });
+            }}
+          >
+            <Text>Annuler</Text>
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };

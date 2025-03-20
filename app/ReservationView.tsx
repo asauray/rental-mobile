@@ -50,15 +50,11 @@ export const ReservationView = (props: ReservationViewProps) => {
       <Card>
         <CardHeader className="flex flex-row justify-between items-start">
           <View>
-            <CardTitle>{props.reservation.customer_first_name}</CardTitle>
+            <CardTitle>{`${props.reservation.customer_first_name} ${props.reservation.customer_last_name}`}</CardTitle>
             <View className="flex flex-col justify-between gap-4">
               <Muted>
                 {unit.model.brand} - {unit.model.name}
               </Muted>
-              <View>
-                <P>{props.reservation.customer_email}</P>
-                <P>{props.reservation.customer_phone_number}</P>
-              </View>
             </View>
           </View>
           <P>{props.reservation.formatted_price}</P>
@@ -70,28 +66,6 @@ export const ReservationView = (props: ReservationViewProps) => {
               {dayjs(props.reservation.end_date).format("DD MMMM H:mm")}
             </P>
           </View>
-
-          {props.reservation.state == "confirmed" && (
-            <View className="flex items-end">
-              <Button
-                variant="destructive"
-                onPress={() => {
-                  console.log(
-                    "replying to reservation: " + props.reservation.id
-                  );
-                  RentalApi.replyToReservation(
-                    props.reservation.id,
-                    "cancel",
-                    props.tenant,
-                    props.currentUser,
-                    () => auth().signOut()
-                  ).then(() => props.reloadRentals());
-                }}
-              >
-                <Text>Annuler</Text>
-              </Button>
-            </View>
-          )}
         </CardContent>
         {props.reservation.state == "pending_capture" && (
           <CardFooter className="gap-4 flex justify-end">

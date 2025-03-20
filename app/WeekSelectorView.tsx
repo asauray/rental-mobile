@@ -29,13 +29,11 @@ export const WeekSelectorView = ({
   };
 
   return (
-    <View className="flex flex-row justify-center items-center gap-4">
+    <View className="flex flex-row ml-4 mr-4 justify-between items-center gap-4">
       <Button variant="outline" onPress={() => previousWeek()}>
         <Text>Precedent</Text>
       </Button>
-      <P>
-        {from.format("DD/MM/YYYY")} - {to.format("DD/MM/YYYY")}
-      </P>
+
       <Button variant="outline" onPress={() => nextWeek()}>
         <Text>Suivant</Text>
       </Button>
