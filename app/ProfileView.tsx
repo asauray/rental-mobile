@@ -44,6 +44,8 @@ export const ProfileView = ({ tenant, user }: ProfileViewProps) => {
 
   const [stripeButtonProgress, setStripeButtonProgress] = useState(false);
 
+  const displayCreateBrandButton = false;
+
   return (
     <ScrollView>
       <View className="p-4 gap-4 h-full flex justify-between items-center">
@@ -83,6 +85,16 @@ export const ProfileView = ({ tenant, user }: ProfileViewProps) => {
                 }
               </View>
             ))}
+            {displayCreateBrandButton && (
+              <Button
+                className="w-full"
+                onPress={() => {
+                  router.push("/routes/create-brand");
+                }}
+              >
+                <Text>Créer un espace</Text>
+              </Button>
+            )}
           </CardContent>
         </Card>
         <Button

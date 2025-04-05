@@ -188,7 +188,9 @@ export const NotificationsView = ({
         ListEmptyComponent={() => (
           <View className="flex justify-center items-center w-full h-full gap-2">
             <AntDesign name="checkcircleo" size={24} color="black" />
-            <H4>Aucunes réservations</H4>
+            <H4 className="text-wrap text-center ml-8 mr-8">
+              Aucunes réservations en attente de validation
+            </H4>
           </View>
         )}
         contentContainerStyle={{ flexGrow: 1 }}

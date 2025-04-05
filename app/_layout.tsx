@@ -78,8 +78,6 @@ export default function RootLayout() {
   );
 
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
-  const { user } = useUserContext();
-  const { tenant } = useTenantContext();
 
   function onAuthStateChanged(newUser: FirebaseAuthTypes.User | null) {
     console.log(`onAuthStateChanged: ${newUser ? newUser.email : "null"}`);

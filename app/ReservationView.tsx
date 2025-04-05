@@ -16,6 +16,7 @@ import { Muted, P } from "@/components/ui/typography";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
+import { ReservationCalendar } from "./components/ReservationCalendar";
 
 export interface ReservationViewProps {
   reservation: Rental;
@@ -36,7 +37,6 @@ export const ReservationView = (props: ReservationViewProps) => {
       setUnit(unit);
     });
   }, [props.reservation.unit_id]);
-
   return unit ? (
     <TouchableOpacity
       onPress={() => {

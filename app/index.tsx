@@ -39,6 +39,7 @@ import DeviceInfo from "react-native-device-info";
 import * as amplitude from "@amplitude/analytics-react-native";
 import { useTenantContext } from "./hooks/TenantContextProvider";
 import { Button } from "@/components/ui/button";
+import { ReservationCalendar } from "./components/ReservationCalendar";
 amplitude.init("0e1b5f251b9dd40685d0188a6ee4f22f");
 
 const weekOfYear = require("dayjs/plugin/weekOfYear");
@@ -107,195 +108,42 @@ async function registerForPushNotificationsAsync() {
 
 export default function Home({}) {
   const { tenant } = useTenantContext();
+  const [channels, setChannels] = React.useState<
+    Notifications.NotificationChannel[]
+  >([]);
+  const notificationListener = React.useRef<Notifications.EventSubscription>();
+  const responseListener = React.useRef<Notifications.EventSubscription>();
 
-  const ReservationsView = (reservationProps: ReservationProps) => {
-    const [from, setFrom] = React.useState<dayjs.Dayjs>(
-      dayjs().startOf("week")
-    );
+  React.useEffect(() => {
+    registerForPushNotificationsAsync();
+    if (Platform.OS === "android") {
+      Notifications.getNotificationChannelsAsync().then((value) =>
+        setChannels(value ?? [])
+      );
+    }
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        RentalApi.resetCache();
+      });
 
-    const [reservations, setReservations] = React.useState<
-      Reservations | undefined
-    >(undefined);
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {});
 
-    const reloadData = React.useCallback(
-      (fromDate: dayjs.Dayjs) => {
-        setRefreshing(true);
-        tenant &&
-          user &&
-          RentalApi.fetchRentals(
-            fromDate.format(),
-            undefined,
-            reservationProps.states,
-            "day",
-            tenant,
-            user,
-            () => auth().signOut()
-          )
-            .then((newReservations) => {
-              setReservations(newReservations);
-              setRefreshing(false);
-            })
-            .catch((error) => {
-              console.log("rental error");
-              console.log(error);
-              setRefreshing(false);
-            });
-      },
-      [tenant, user, reservationProps.states]
-    );
-
-    React.useEffect(() => {
-      reloadData(from);
-    }, [from]);
-
-    // Add focus effect to reload data when screen comes into focus
-    useFocusEffect(
-      React.useCallback(() => {
-        console.log("ReservationsView focused - reloading data");
-        reloadData(from);
-      }, [from, reloadData])
-    );
-
-    const data =
-      reservations?.bookings_grouped_by_day.map((group) => {
-        return { title: group.grouping_key, data: group.rentals };
-      }) || [];
-
-    const [refreshing, setRefreshing] = React.useState(false);
-
-    const onPullDown = React.useCallback(() => {
-      reloadData(from);
-    }, []);
-
-    const [expoPushToken, setExpoPushToken] = React.useState("");
-    const [notification, setNotification] = React.useState<
-      Notifications.Notification | undefined
-    >(undefined);
-    const notificationListener =
-      React.useRef<Notifications.EventSubscription>();
-    const responseListener = React.useRef<Notifications.EventSubscription>();
-
-    React.useEffect(() => {
-      console.log(`submitting user token, user=${user}`);
-      if (user) {
-        console.log("submitting user token: user logged in");
-        registerForPushNotificationsAsync()
-          .then(async (token) => {
-            console.log("got token: ", token);
-            if (token) {
-              const deviceId = await DeviceInfo.getUniqueId();
-              RentalApi.submitPushToken(
-                deviceId,
-                token,
-                user,
-                async () => {}
-              ).then(() => {
-                console.log("push token submitted");
-                setExpoPushToken(token);
-              });
-            } else {
-              setExpoPushToken("");
-            }
-          })
-          .catch((error: any) => {
-            console.log("unable to send expo token", error);
-            setExpoPushToken(`${error}`);
-          });
-        notificationListener.current =
-          Notifications.addNotificationReceivedListener((notification) => {
-            setNotification(notification);
-          });
-
-        responseListener.current =
-          Notifications.addNotificationResponseReceivedListener((response) => {
-            console.log(response);
-          });
-
-        return () => {
-          notificationListener.current &&
-            Notifications.removeNotificationSubscription(
-              notificationListener.current
-            );
-          responseListener.current &&
-            Notifications.removeNotificationSubscription(
-              responseListener.current
-            );
-        };
-      }
-    }, [user]);
-
-    return tenant && user && reservations ? (
-      <SafeAreaView className="h-full">
-        <View className="flex flex-row mt-4 ml-4 mr-4 justify-center items-center gap-4">
-          <Button
-            variant="outline"
-            onPress={() => setFrom(from.subtract(1, "week").startOf("week"))}
-          >
-            <Text>Precedent</Text>
-          </Button>
-          <View>
-            <Muted>{`Du ${from.format("YYYY/MM/DD")} au ${from
-              ?.endOf("week")
-              .format("YYYY/MM/DD")}`}</Muted>
-          </View>
-          <Button
-            variant="outline"
-            onPress={() => setFrom(from.add(1, "week").startOf("week"))}
-          >
-            <Text>Suivant</Text>
-          </Button>
-        </View>
-        <SectionList
-          ListEmptyComponent={() => (
-            <View className="flex justify-center items-center w-full h-full gap-2">
-              <AntDesign name="checkcircleo" size={24} color="black" />
-              <H4>Aucunes réservations</H4>
-            </View>
-          )}
-          contentContainerStyle={{ flexGrow: 1 }}
-          className="gap-4 gap-y-4 p-4"
-          sections={data}
-          onStartReached={() => {
-            //reloadData(previous || next);
-          }}
-          onEndReached={() => {}}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onPullDown} />
-          }
-          ItemSeparatorComponent={() => <View className="h-4"></View>}
-          renderItem={({ item }) => (
-            <ReservationView
-              reservation={item}
-              currentUser={user}
-              tenant={tenant}
-              reloadRentals={() => {
-                console.log("reload all rentals");
-                reloadData(from);
-              }}
-            />
-          )}
-          renderSectionHeader={({ section }) => (
-            <H4 className="m-2 bg-white w-full">
-              {dayjs(section.title, "YYYY-MM-DD").format("DD MMMM")}
-            </H4>
-          )}
-          keyExtractor={(item) => `${item.id}`}
-        ></SectionList>
-      </SafeAreaView>
-    ) : (
-      <View className="flex justify-center items-center w-full h-full gap-4">
-        <Skeleton className="h-16 w-72 rounded-3xl" />
-        <Skeleton className="h-16 w-72 rounded-3xl" />
-        <Skeleton className="h-16 w-72 rounded-3xl" />
-      </View>
-    );
-  };
+    return () => {
+      notificationListener.current &&
+        Notifications.removeNotificationSubscription(
+          notificationListener.current
+        );
+      responseListener.current &&
+        Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
 
   const PendingReservations = () => (
     <NotificationsView currentUser={user} tenant={tenant} />
   );
   const ConfirmedReservations = () => (
-    <ReservationsView states={["confirmed"]} />
+    <ReservationCalendar states={["confirmed"]} />
   );
   const Tab = createBottomTabNavigator();
 
@@ -304,7 +152,6 @@ export default function Home({}) {
   }
 
   const { user } = React.useContext(UserContext);
-  const [initializing, setInitializing] = React.useState(true);
 
   if (!user) {
     return <Redirect href={"/sign-in"} />;

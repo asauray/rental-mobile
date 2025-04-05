@@ -1,12 +1,14 @@
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import Config from "react-native-config";
 import { BusinessError } from "./business_error";
+import { reset } from "@amplitude/analytics-react-native";
 
-const rootUrl = "http://192.168.1.34:8080";
+const rootUrl = "http://192.168.1.41:8080";
 //const rootUrl = Config.API_ROOT_URL;
 
 export interface Rental {
   id: number;
+  model: string;
   state: string;
   unit_id: number;
   start_date: string;
@@ -113,6 +115,13 @@ export interface SetupStripeAccountResponse {
 }
 
 export const RentalApi = {
+  _cache: new Map<string, { data: Reservations; timestamp: number }>(),
+  _cacheExpirationMs: 5 * 60 * 1000, // 5 minutes
+
+  resetCache() {
+    RentalApi._cache.clear();
+  },
+
   fetchRentalById: (
     user: FirebaseAuthTypes.User,
     tenant: number,
@@ -120,6 +129,7 @@ export const RentalApi = {
     signOut: () => Promise<void>
   ) => {
     const url = `${rootUrl}/api/v1/me/reservations/${rentalId}`;
+    console.log("url is ", url);
     return user
       .getIdToken()
       .then((idToken) =>
@@ -284,9 +294,9 @@ export const RentalApi = {
           );
           throw serverError;
         }
+        RentalApi.resetCache();
       })
       .catch((error) => {
-        console.log("fuck");
         console.log(error);
       });
   },
@@ -358,6 +368,25 @@ export const RentalApi = {
     user: FirebaseAuthTypes.User,
     signOut: () => Promise<void>
   ) => {
+    const cacheKey = JSON.stringify({
+      fromDate,
+      toDate,
+      states,
+      groupBy,
+      tenant,
+    });
+
+    const cachedData = RentalApi._cache.get(cacheKey);
+    const now = Date.now();
+
+    if (
+      cachedData &&
+      now - cachedData.timestamp < RentalApi._cacheExpirationMs
+    ) {
+      console.log("returning cached data");
+      return Promise.resolve(cachedData.data);
+    }
+
     console.log(`tenant: ${tenant}`);
     let queryParams: Record<string, string> = {};
     queryParams["group_by"] = groupBy;
@@ -373,6 +402,8 @@ export const RentalApi = {
     const url = `${rootUrl}/api/v1/me/reservations?${new URLSearchParams(
       queryParams
     )}`;
+    console.log("url is ", url);
+
     return user
       .getIdToken()
       .then((idToken) =>
@@ -391,7 +422,10 @@ export const RentalApi = {
         return response.json();
       })
       .then((data) => {
-        console.log(JSON.stringify(data));
+        RentalApi._cache.set(cacheKey, {
+          data: data as Reservations,
+          timestamp: Date.now(),
+        });
         return data;
       })
       .then((data) => data as Reservations);
