@@ -1,10 +1,11 @@
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import Config from "react-native-config";
 import { BusinessError } from "./business_error";
-import { reset } from "@amplitude/analytics-react-native";
+import Constants from "expo-constants";
 
-const rootUrl = "http://192.168.1.41:8080";
-//const rootUrl = Config.API_ROOT_URL;
+const rootUrl = (Constants.expoConfig?.extra?.apiRootUrl as string) ?? "";
+
+const cacheEnabled = false;
 
 export interface Rental {
   id: number;
@@ -380,6 +381,7 @@ export const RentalApi = {
     const now = Date.now();
 
     if (
+      cacheEnabled &&
       cachedData &&
       now - cachedData.timestamp < RentalApi._cacheExpirationMs
     ) {

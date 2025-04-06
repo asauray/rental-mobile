@@ -1,8 +1,8 @@
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
-import Config from "react-native-config";
 import { Brand, CreateBrand } from "../types/brand";
+import Constants from "expo-constants";
 
-const rootUrl = "http://192.168.1.41:8080"; //Config.API_ROOT_URL;
+const rootUrl = (Constants.expoConfig?.extra?.apiRootUrl as string) ?? "";
 
 export const BrandApi = {
   createBrand: (

@@ -1,7 +1,8 @@
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
+import Constants from "expo-constants";
 import Config from "react-native-config";
 
-const rootUrl = "http://192.168.1.41:8080"; //Config.API_ROOT_URL;
+const rootUrl = (Constants.expoConfig?.extra?.apiRootUrl as string) ?? "";
 
 interface UploadResponse {
   id: string;

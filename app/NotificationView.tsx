@@ -110,7 +110,7 @@ export const NotificationsView = ({
             const unit = units.get(r.unit_id);
             return (
               unit && (
-                <View>
+                <View key={r.id}>
                   <CardDescription>
                     <P>{r.formatted_price}</P>
                   </CardDescription>
@@ -205,7 +205,10 @@ export const NotificationsView = ({
         }
         ItemSeparatorComponent={() => <View className="h-4"></View>}
         renderItem={({ item }) => (
-          <NotificationView reservation={item.rentals} />
+          <NotificationView
+            key={item.grouping_key}
+            reservation={item.rentals}
+          />
         )}
         keyExtractor={(item) => `${item.grouping_key}`}
       ></FlatList>
