@@ -24,8 +24,7 @@ export const RentalList = ({ reservations, day }: RentalListProps) => {
   const filteredData = useMemo(
     () =>
       reservations
-        ?.filter((booking) => booking.day === day.format("YYYY-MM-DD"))
-        .flatMap((booking) => booking.rentals)
+        ?.flatMap((booking) => booking.rentals)
         .filter((booking) => {
           if (!textFilter) {
             return true;
@@ -126,6 +125,8 @@ export const RentalList = ({ reservations, day }: RentalListProps) => {
       </View>
     );
   } else if (count != null && count === 0) {
-    return <H4>No reservations on {day.format("dddd D MMMM")}</H4>;
+    return (
+      <H4 className="m-4">No reservations on {day.format("dddd D MMMM")}</H4>
+    );
   }
 };

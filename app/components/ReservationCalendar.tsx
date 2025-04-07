@@ -1,6 +1,16 @@
 import dayjs from "dayjs";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarProvider, WeekCalendar } from "react-native-calendars";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  CalendarProvider,
+  ExpandableCalendar,
+  WeekCalendar,
+} from "react-native-calendars";
 import { getTheme, lightThemeColor, themeColor } from "./theme";
 import { RentalApi, Reservations } from "../api/rental_api";
 import { MarkedDates } from "react-native-calendars/src/types";
@@ -11,6 +21,12 @@ import { useTenantContext } from "../hooks/TenantContextProvider";
 import auth from "@react-native-firebase/auth";
 import { StyleSheet, View } from "react-native";
 import { RentalList } from "./RentalList";
+import { init } from "@amplitude/analytics-react-native";
+
+const isoWeek = require("dayjs/plugin/isoWeek");
+dayjs.extend(isoWeek);
+
+//(ExpandableCalendar as any).defaultProps = undefined;
 
 export interface ReservationCalendarProps {
   states: string[];
@@ -19,6 +35,14 @@ export interface Interval {
   from: dayjs.Dayjs;
   to: dayjs.Dayjs;
 }
+
+const initialDate = dayjs().startOf("day");
+const initialFrom = initialDate.startOf("isoWeek");
+const initialTo = initialFrom.add(6, "day").endOf("day");
+console.log("initial date ", initialDate.format());
+console.log("initial from", initialFrom);
+console.log("initial to", initialTo);
+
 export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
   const { user } = useUserContext();
   const { tenant } = useTenantContext();
@@ -31,11 +55,42 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
     undefined
   );
 
+  const [day, setDay] = React.useState<dayjs.Dayjs>(initialDate);
   const [interval, setInterval] = React.useState<Interval>({
-    from: dayjs().day(1),
-    to: dayjs().add(1, "week").day(0),
+    from: initialFrom,
+    to: initialTo,
   });
-  const [day, setDay] = React.useState<dayjs.Dayjs>(dayjs());
+
+  const marked = useMemo<MarkedDates>(() => {
+    let d = interval.from;
+    let m: MarkedDates = {};
+    while (d.isBefore(interval.to)) {
+      m[d.format("YYYY-MM-DD")] = {
+        marked: false,
+        inactive: false,
+        disabled: false,
+        dotColor: themeColor,
+      };
+      d = d.add(1, "day");
+    }
+    reservations?.bookings_grouped_by_day.forEach((rental) => {
+      m[rental.day] = {
+        marked: rental.rentals.length > 0,
+        inactive: false,
+        disabled: false,
+        dotColor: themeColor,
+      };
+    });
+    return m;
+  }, [reservations]);
+
+  const bookingOnGivenDay = useMemo(
+    () =>
+      reservations?.bookings_grouped_by_day.filter(
+        (booking) => booking.day === day.format("YYYY-MM-DD")
+      ),
+    [day, reservations]
+  );
 
   const reloadData = React.useCallback(
     (fromDate: dayjs.Dayjs, toDate: dayjs.Dayjs) => {
@@ -53,6 +108,7 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
           .then((newReservations) => {
             console.log("newReservations", newReservations);
             setReservations(newReservations);
+            console.log("updating marked dates");
           })
           .catch((error) => {
             console.log("rental error");
@@ -62,19 +118,15 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
     [tenant, user, states]
   );
 
-  // Add focus effect to reload data when screen comes into focus
-  // useFocusEffect(
-  //   React.useCallback(() => {
-  //     reloadData(interval.from, interval.to);
-  //   }, [interval])
-  // );
-
   useFocusEffect(
     React.useCallback(() => {
-      if (!reservations || !isDataInInterval(day, interval.from, interval.to)) {
+      let currentInterval = interval;
+      let currentReservations = reservations;
+      if (!isDataInInterval(day, interval.from, interval.to)) {
         console.log("data is not in interval");
-        const newFrom = day.day(1).startOf("day");
-        const newTo = day.add(1, "week").day(0).endOf("day");
+        const newFrom = day.startOf("isoWeek").startOf("day");
+        const newTo = newFrom.add(6, "day").endOf("day");
+        currentReservations = undefined;
         setReservations(undefined);
         const newInterval = {
           from: newFrom,
@@ -82,7 +134,11 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
         };
         console.log("updating fucking interval", JSON.stringify(newInterval));
         setInterval(newInterval);
-        reloadData(newInterval.from, newInterval.to);
+        currentInterval = newInterval;
+      }
+      if (!currentReservations) {
+        console.log("reservations is undefined");
+        reloadData(currentInterval.from, currentInterval.to);
       }
     }, [day])
   );
@@ -91,9 +147,7 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
     day: dayjs.Dayjs,
     from: dayjs.Dayjs,
     to: dayjs.Dayjs
-  ) =>
-    ((day.isAfter(from) || day.isSame(from)) && day.isBefore(to)) ||
-    day.isSame(to);
+  ) => (day.isAfter(from) || day.isSame(from)) && day.isBefore(to);
 
   const styles = StyleSheet.create({
     calendar: {
@@ -117,39 +171,15 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
     },
   });
 
-  let marked: MarkedDates = {};
-  let d = interval.from;
-  while (d.isBefore(interval.to)) {
-    marked[d.format("YYYY-MM-DD")] = {
-      marked: false,
-      inactive: false,
-      disabled: false,
-      dotColor: themeColor,
-    };
-    d = d.add(1, "day");
-  }
-  reservations?.bookings_grouped_by_day.forEach((rental) => {
-    marked[rental.day] = {
-      marked: rental.rentals.length > 0,
-      inactive: false,
-      disabled: false,
-      dotColor: themeColor,
-    };
-  });
-
   const onDateChanged = useRef((date: string) => {
     const newDay = dayjs(date).startOf("day");
     setDay(newDay);
     console.log("new day: ", date);
-    console.log("existing interval:", JSON.stringify(interval));
-    console.log("existing reservations", reservations);
   });
-
-  console.log("rerender: interval is", JSON.stringify(interval));
 
   return (
     <CalendarProvider
-      date={dayjs().format("YYYY-MM-DD")}
+      date={day.format("YYYY-MM-DD")}
       showTodayButton={false}
       theme={todayBtnTheme.current}
       onDateChanged={(day) => {
@@ -170,9 +200,7 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
         <RentalList
           reservations={
             isDataInInterval(day, interval.from, interval.to)
-              ? reservations?.bookings_grouped_by_day.filter(
-                  (booking) => booking.day === day.format("YYYY-MM-DD")
-                )
+              ? bookingOnGivenDay
               : undefined
           }
           day={day}
