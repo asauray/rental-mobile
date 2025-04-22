@@ -40,6 +40,11 @@ import * as amplitude from "@amplitude/analytics-react-native";
 import { useTenantContext } from "./hooks/TenantContextProvider";
 import { Button } from "@/components/ui/button";
 import { ReservationCalendar } from "./components/ReservationCalendar";
+import * as TaskManager from "expo-task-manager";
+import { PayoutDto } from "./types/payout";
+import { FirebaseAuthTypes } from "@react-native-firebase/auth";
+import { PayoutsScreen } from "./routes/payouts-screen";
+
 amplitude.init("0e1b5f251b9dd40685d0188a6ee4f22f");
 
 const weekOfYear = require("dayjs/plugin/weekOfYear");
@@ -107,7 +112,7 @@ async function registerForPushNotificationsAsync() {
 }
 
 export default function Home({}) {
-  const { tenant } = useTenantContext();
+  const { tenant } = useTenantContext() as { tenant: number };
   const [channels, setChannels] = React.useState<
     Notifications.NotificationChannel[]
   >([]);
@@ -122,8 +127,22 @@ export default function Home({}) {
       );
     }
     notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
+      Notifications.addNotificationReceivedListener(async (notification) => {
         RentalApi.resetCache();
+        if (user && tenant) {
+          const pendingReservations = await RentalApi.fetchRentals(
+            dayjs().subtract(1, "day").format(),
+            dayjs().add(14, "week").format(),
+            ["pending_capture"],
+            "purchase",
+            tenant,
+            user,
+            () => auth().signOut()
+          );
+          await Notifications.setBadgeCountAsync(
+            pendingReservations.bookings_grouped_by_day.length
+          );
+        }
       });
 
     responseListener.current =
@@ -139,6 +158,30 @@ export default function Home({}) {
     };
   }, []);
 
+  const BACKGROUND_NOTIFICATION_TASK = "BACKGROUND-NOTIFICATION-TASK";
+
+  TaskManager.defineTask(
+    BACKGROUND_NOTIFICATION_TASK,
+    async ({ data, error, executionInfo }) => {
+      console.log("Background notification task: received a new notification");
+      if (user && tenant) {
+        const pendingReservations = await RentalApi.fetchRentals(
+          dayjs().subtract(1, "day").format(),
+          dayjs().add(14, "week").format(),
+          ["pending_capture"],
+          "purchase",
+          tenant,
+          user,
+          () => auth().signOut()
+        );
+        await Notifications.setBadgeCountAsync(
+          pendingReservations.bookings_grouped_by_day.length
+        );
+      }
+    }
+  );
+  Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK);
+
   const PendingReservations = () => (
     <NotificationsView currentUser={user} tenant={tenant} />
   );
@@ -151,7 +194,9 @@ export default function Home({}) {
     states: [string];
   }
 
-  const { user } = React.useContext(UserContext);
+  const { user } = React.useContext(UserContext) as {
+    user: FirebaseAuthTypes.User;
+  };
 
   if (!user) {
     return <Redirect href={"/sign-in"} />;
@@ -169,17 +214,6 @@ export default function Home({}) {
   return (
     <Tab.Navigator>
       <Tab.Screen
-        name="Pending Reservations"
-        component={PendingReservations}
-        options={{
-          tabBarLabel: "Notifications",
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="notifications" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
         name="Agenda"
         component={ConfirmedReservations}
         options={{
@@ -190,7 +224,17 @@ export default function Home({}) {
           ),
         }}
       />
-
+      <Tab.Screen
+        name="Payouts"
+        component={PayoutsScreen}
+        options={{
+          tabBarLabel: "Paiements",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="attach-money" size={size} color={color} />
+          ),
+        }}
+      />
       <Tab.Screen
         name="Profile"
         children={() => <ProfileView tenant={tenant} user={user} />}

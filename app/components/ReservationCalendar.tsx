@@ -1,32 +1,33 @@
 import dayjs from "dayjs";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  CalendarProvider,
-  ExpandableCalendar,
-  WeekCalendar,
-} from "react-native-calendars";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarProvider, ExpandableCalendar } from "react-native-calendars";
 import { getTheme, lightThemeColor, themeColor } from "./theme";
 import { RentalApi, Reservations } from "../api/rental_api";
 import { MarkedDates } from "react-native-calendars/src/types";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useUserContext } from "../hooks/UserContextProvider";
 import { useTenantContext } from "../hooks/TenantContextProvider";
 
 import auth from "@react-native-firebase/auth";
-import { StyleSheet, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import { RentalList } from "./RentalList";
-import { init } from "@amplitude/analytics-react-native";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { StyleSheet } from "react-native";
+import Entypo from "@expo/vector-icons/Entypo";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useNotification } from "../hooks/UseNotifications";
+import { useAppLifeCycle } from "../hooks/UseAppLifecycle";
+import { useBadgeCount } from "../hooks/UseBadgeCount";
 
 const isoWeek = require("dayjs/plugin/isoWeek");
 dayjs.extend(isoWeek);
 
-//(ExpandableCalendar as any).defaultProps = undefined;
+(ExpandableCalendar as any).defaultProps = undefined;
 
 export interface ReservationCalendarProps {
   states: string[];
@@ -39,9 +40,6 @@ export interface Interval {
 const initialDate = dayjs().startOf("day");
 const initialFrom = initialDate.startOf("isoWeek");
 const initialTo = initialFrom.add(6, "day").endOf("day");
-console.log("initial date ", initialDate.format());
-console.log("initial from", initialFrom);
-console.log("initial to", initialTo);
 
 export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
   const { user } = useUserContext();
@@ -51,8 +49,29 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
     todayButtonTextColor: themeColor,
   });
 
+  const { notification } = useNotification();
+  const { badgeCount } = useBadgeCount();
+
   const [reservations, setReservations] = useState<Reservations | undefined>(
     undefined
+  );
+
+  const [pendingReservations, setPendingReservations] = useState<
+    Reservations | undefined
+  >(undefined);
+
+  const roomsPendingBooking = useMemo<string>(
+    () =>
+      pendingReservations?.bookings_grouped_by_day
+        .flatMap((item) => item.rentals)
+        .reduce<string[]>((acc, current) => {
+          if (!acc.includes(current.model)) {
+            return [...acc, current.model];
+          }
+          return acc;
+        }, [])
+        .join(", ") || "",
+    [pendingReservations]
   );
 
   const [day, setDay] = React.useState<dayjs.Dayjs>(initialDate);
@@ -60,6 +79,8 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
     from: initialFrom,
     to: initialTo,
   });
+
+  const [calendarToggled, setCalendarToggled] = useState(false);
 
   const marked = useMemo<MarkedDates>(() => {
     let d = interval.from;
@@ -94,6 +115,7 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
 
   const reloadData = React.useCallback(
     (fromDate: dayjs.Dayjs, toDate: dayjs.Dayjs) => {
+      console.log("reloading data");
       tenant &&
         user &&
         RentalApi.fetchRentals(
@@ -106,23 +128,27 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
           () => auth().signOut()
         )
           .then((newReservations) => {
-            console.log("newReservations", newReservations);
             setReservations(newReservations);
-            console.log("updating marked dates");
           })
           .catch((error) => {
             console.log("rental error");
             console.log(error);
           });
     },
-    [tenant, user, states]
+    [tenant, user, states, notification, badgeCount]
   );
 
   useFocusEffect(
     React.useCallback(() => {
       let currentInterval = interval;
       let currentReservations = reservations;
-      if (!isDataInInterval(day, interval.from, interval.to)) {
+      if (calendarToggled) {
+        currentInterval = {
+          from: day.startOf("month"),
+          to: day.endOf("month"),
+        };
+        currentReservations = undefined;
+      } else if (!isDataInInterval(day, interval.from, interval.to)) {
         console.log("data is not in interval");
         const newFrom = day.startOf("isoWeek").startOf("day");
         const newTo = newFrom.add(6, "day").endOf("day");
@@ -132,7 +158,6 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
           from: newFrom,
           to: newTo,
         };
-        console.log("updating fucking interval", JSON.stringify(newInterval));
         setInterval(newInterval);
         currentInterval = newInterval;
       }
@@ -140,7 +165,29 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
         console.log("reservations is undefined");
         reloadData(currentInterval.from, currentInterval.to);
       }
-    }, [day])
+    }, [calendarToggled, day])
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (tenant && user) {
+        RentalApi.fetchRentals(
+          dayjs().subtract(1, "day").format(),
+          dayjs().add(14, "week").format(),
+          ["pending_capture"],
+          "purchase",
+          tenant,
+          user,
+          () => auth().signOut()
+        )
+          .then((newPendingReservations) => {
+            setPendingReservations(newPendingReservations);
+          })
+          .catch((error) => {
+            console.log("notifications view", error);
+          });
+      }
+    }, [tenant, user, notification, badgeCount])
   );
 
   const isDataInInterval = (
@@ -187,9 +234,45 @@ export const ReservationCalendar = ({ states }: ReservationCalendarProps) => {
       }}
     >
       <View style={styles.container}>
-        <WeekCalendar
+        {pendingReservations &&
+        pendingReservations.bookings_grouped_by_day.length > 0 ? (
+          <TouchableOpacity
+            onPress={() => {
+              router.push("/routes/pending-reservations");
+            }}
+          >
+            <Card className="m-4 bg-black text-white">
+              <CardHeader>
+                <View>
+                  <View className="flex-row items-center justify-between">
+                    <CardTitle className="text-white">
+                      {`${
+                        pendingReservations.bookings_grouped_by_day.length
+                      } réservation${
+                        pendingReservations.bookings_grouped_by_day.length > 1
+                          ? "s"
+                          : ""
+                      } en attente`}
+                    </CardTitle>
+                    <MaterialIcons
+                      name="navigate-next"
+                      size={24}
+                      color="white"
+                    />
+                  </View>
+                  <CardDescription className="text-white">
+                    {roomsPendingBooking}
+                  </CardDescription>
+                </View>
+              </CardHeader>
+            </Card>
+          </TouchableOpacity>
+        ) : null}
+        <ExpandableCalendar
           disabledDaysIndexes={[]}
-          disabledByWeekDays={[]}
+          onCalendarToggled={(toggled) => {
+            setCalendarToggled(toggled);
+          }}
           theme={theme.current}
           disableAllTouchEventsForDisabledDays={true}
           disableAllTouchEventsForInactiveDays={true}

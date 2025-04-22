@@ -14,9 +14,6 @@ export default function RentalDetails() {
   const { user } = useUserContext();
 
   React.useEffect(() => {
-    console.log("rentalId: " + rentalId);
-    console.log("user: " + user);
-    console.log("tenant: " + tenant);
     if (user && tenant) {
       RentalApi.fetchRentalById(user, tenant, rentalId as string, () =>
         auth().signOut()

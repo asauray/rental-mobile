@@ -1,0 +1,1 @@
+xcrun simctl push booted net.sauray.booking.cowork payload.json 

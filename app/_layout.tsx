@@ -90,10 +90,19 @@ export default function RootLayout() {
     return subscriber; // unsubscribe on unmount
   }, []);
 
+  const loadTenant = async () => {
+    const tenant = await AsyncStorage.getItem("tenant");
+    return tenant ? parseInt(tenant, 10) : undefined;
+  };
+
+  const loadUser = async () => {
+    return auth().currentUser;
+  };
+
   React.useEffect(() => {
     (async () => {
-      const tenant = await AsyncStorage.getItem("tenant");
-      thisSetTenant(tenant ? parseInt(tenant, 10) : undefined);
+      const tenant = await loadTenant();
+      thisSetTenant(tenant);
       console.log("new default tenant: " + tenant);
 
       const theme = await AsyncStorage.getItem("theme");

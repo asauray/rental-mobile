@@ -77,9 +77,6 @@ export const RentalList = ({ reservations, day }: RentalListProps) => {
     );
   }, []);
 
-  console.log("reservations: ", reservations);
-  console.log("coutn: ", count);
-
   if (!reservations && !count) {
     return <Skeleton className="h-20 w-full" />;
   } else if (reservations && count != null && count > 0) {

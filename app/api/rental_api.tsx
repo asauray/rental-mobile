@@ -2,6 +2,7 @@ import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import Config from "react-native-config";
 import { BusinessError } from "./business_error";
 import Constants from "expo-constants";
+import { PayoutListDto, PayoutsResponse } from "../types/payout";
 
 const rootUrl = (Constants.expoConfig?.extra?.apiRootUrl as string) ?? "";
 
@@ -123,6 +124,34 @@ export const RentalApi = {
     RentalApi._cache.clear();
   },
 
+  fetchPayouts: (
+    startDate: string,
+    endDate: string,
+    tenant: number,
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/admin/rooms/stripe-payouts?startDate=${startDate}&endDate=${endDate}`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Tenant-id": `${tenant}`,
+          },
+        })
+      )
+      .then((response) => {
+        console.log("response " + response.status);
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .then((data) => data as PayoutsResponse);
+  },
+
   fetchRentalById: (
     user: FirebaseAuthTypes.User,
     tenant: number,
@@ -130,7 +159,6 @@ export const RentalApi = {
     signOut: () => Promise<void>
   ) => {
     const url = `${rootUrl}/api/v1/me/reservations/${rentalId}`;
-    console.log("url is ", url);
     return user
       .getIdToken()
       .then((idToken) =>
@@ -306,7 +334,6 @@ export const RentalApi = {
     signOut: () => Promise<void>
   ) => {
     const url = `${rootUrl}/api/v1/me/tenants`;
-    console.log("url is ", url);
     return user
       .getIdToken()
       .then((idToken) =>
@@ -389,7 +416,6 @@ export const RentalApi = {
       return Promise.resolve(cachedData.data);
     }
 
-    console.log(`tenant: ${tenant}`);
     let queryParams: Record<string, string> = {};
     queryParams["group_by"] = groupBy;
     if (fromDate) {
@@ -404,7 +430,6 @@ export const RentalApi = {
     const url = `${rootUrl}/api/v1/me/reservations?${new URLSearchParams(
       queryParams
     )}`;
-    console.log("url is ", url);
 
     return user
       .getIdToken()

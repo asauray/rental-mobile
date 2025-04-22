@@ -1,0 +1,13 @@
+{
+  "to": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+  "sound": "default",
+  "aps": {
+    "alert": {
+      "title": "Hello",
+      "body": "This is a test notification"
+    }
+  },
+  "data": {
+    "withSome": "data"
+  }
+}
