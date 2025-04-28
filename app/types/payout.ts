@@ -1,9 +1,11 @@
+import dayjs from "dayjs";
+
 export interface PayoutDto {
   id: string;
   amount: number;
   status: string;
   created_at: string;
-  expected_arrival_date: string;
+  arrival_date: string;
 }
 
 export interface DailyPayout {
@@ -17,4 +19,20 @@ export interface GraphPoint {
 
 export interface PayoutsResponse {
   payouts: DailyPayout[];
+}
+
+export interface Payout {
+  id: string;
+  amount: number;
+  status: string;
+  createdAt: dayjs.Dayjs;
+  expectedArrivalDate: dayjs.Dayjs;
+}
+export interface PayoutOnDay {
+  date: dayjs.Dayjs;
+  items: Payout[];
+}
+
+export interface Payouts {
+  payouts: PayoutOnDay[];
 }

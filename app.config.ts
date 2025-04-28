@@ -73,7 +73,7 @@ if (process.env.ENVIRONMENT === "prod") {
     eas: {
       projectId: "c3006282-3bc0-4b89-a3bb-64e9c4413d1f",
     },
-    apiRootUrl: "http://192.168.1.18:8080",
+    apiRootUrl: "http://192.168.1.25:8080",
   };
 } else {
   throw new Error(
