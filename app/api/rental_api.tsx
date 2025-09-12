@@ -115,6 +115,34 @@ export interface BrandsResponse {
 export interface SetupStripeAccountResponse {
   url: string;
 }
+export interface DashboardResponse {
+  url: string;
+}
+export interface SearchResultDto {
+    id: number;
+    state: string;
+    state_updated_at: string;
+    model: string;
+    unit_id: number;
+    start_date: string;
+    end_date: string;
+    price_amount_minor: number;
+    currency: string;
+    formatted_price: string;
+    customer_first_name: string;
+    customer_last_name: string;
+    customer_email: string;
+    customer_phone_number: string;
+    created_at: string;
+  }
+
+export interface SearchResultsResponse {
+  data: SearchResultDto[];
+  pagination: {
+    next: string;
+    previous: string;
+  };
+}
 
 export const RentalApi = {
   _cache: new Map<string, { data: Reservations; timestamp: number }>(),
@@ -123,7 +151,42 @@ export const RentalApi = {
   resetCache() {
     RentalApi._cache.clear();
   },
-
+  fetchSearch: (
+    query: string,
+    page: string | undefined,
+    stateFilter: string[] | undefined,
+    tenant: number,
+    user: FirebaseAuthTypes.User,
+    signOut: () => Promise<void>
+  ) => {
+    const queryParams: Record<string, string> = {};
+    queryParams["q"] = query;
+    if (page) {
+      queryParams["next"] = page;
+    }
+    if (stateFilter) {
+      queryParams["states"] = stateFilter.join(",");
+    }
+    const url = `${rootUrl}/api/v1/me/search?${new URLSearchParams(queryParams)}`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Tenant-id": `${tenant}`,
+          },
+        })
+      )
+      .then((response) => {
+        console.log("response " + response.status);
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .then((data) => data as SearchResultsResponse);
+  },    
   fetchPayouts: (
     startDate: string,
     endDate: string,
@@ -203,6 +266,32 @@ export const RentalApi = {
         return response.json();
       })
       .then((data) => data as SetupStripeAccountResponse);
+  },
+  loginDasboard: (
+    user: FirebaseAuthTypes.User,
+    tenant: number,
+    signOut: () => Promise<void>
+  ) => {
+    const url = `${rootUrl}/api/v1/me/dashboard`;
+    return user
+      .getIdToken()
+      .then((idToken) =>
+        fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Tenant-id": `${tenant}`,
+          },
+        })
+      )
+      .then((response) => {
+        console.log(response.status);
+        if (response.status == 401 || response.status == 403) {
+          return signOut();
+        }
+        return response.json();
+      })
+      .then((data) => data as DashboardResponse);
   },
   submitPushToken: (
     deviceId: string,

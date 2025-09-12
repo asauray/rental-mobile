@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import auth from "@react-native-firebase/auth";
 import { Logo } from "./logo";
 import { Input } from "@/components/ui/input";
@@ -64,16 +64,42 @@ export default function SignIn() {
     }
   };
 
-  if (url && email && url.startsWith(signInDeepLink)) {
-    console.log("signing in with email link: ", email);
-    auth()
-      .signInWithEmailLink(email, url)
-      .then((user) => {
-        setUser(user.user);
-        router.replace("/");
-      });
-  } else {
-    return (
+  React.useEffect(() => {
+    const handleEmailLink = async () => {
+      if (url && url.startsWith(signInDeepLink)) {
+        console.log("handling email link: ", url);
+        let emailForSignIn = email;
+        
+        // If email is not in state, try to get it from AsyncStorage
+        if (!emailForSignIn) {
+          const emailForSignIn = await AsyncStorage.getItem("emailForSignIn");
+          if (emailForSignIn) {
+            setEmail(emailForSignIn);
+          }
+        }
+        
+        if (emailForSignIn) {
+          console.log("signing in with email link: ", emailForSignIn);
+          try {
+            const result = await auth().signInWithEmailLink(emailForSignIn, url);
+            setUser(result.user);
+            await AsyncStorage.removeItem("emailForSignIn"); // Clean up
+            router.replace("/");
+          } catch (error) {
+            console.error("Error signing in with email link:", error);
+            Alert.alert("Error", "Failed to sign in with email link");
+          }
+        } else {
+          console.log("No email found for sign in link");
+          Alert.alert("Error", "No email found for this sign-in link");
+        }
+      }
+    };
+    
+    handleEmailLink();
+  }, [url]);
+
+  return (
       <SafeAreaView
         style={styles.authContainer}
         className="flex justify-center items-center gap-4 m-4"
@@ -126,5 +152,4 @@ export default function SignIn() {
         )}
       </SafeAreaView>
     );
-  }
 }

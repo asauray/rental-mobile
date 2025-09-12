@@ -12,6 +12,20 @@ import { PortalHost } from "@rn-primitives/portal";
 import { TenantContext, useTenantContext } from "./hooks/TenantContextProvider";
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import { UserContext, useUserContext } from "./hooks/UserContextProvider";
+import { NotificationRefreshProvider } from "./hooks/NotificationRefreshContext";
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://bb35e82d641468cebe7974d4ce005db0@o978413.ingest.us.sentry.io/4509237718810626',
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 const LIGHT_THEME: Theme = {
   dark: false,
@@ -66,7 +80,7 @@ export {
 // Prevent the splash screen from auto-hiding before getting the color scheme.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
   const [thisTenant, thisSetTenant] = React.useState<number | undefined>(
     undefined
@@ -134,66 +148,72 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-      <TenantContext.Provider
-        value={{
-          tenant: thisTenant,
-          setTenant: (tenant) => {
-            if (tenant === thisTenant) {
-              return;
-            }
-            console.log("Setting tenant: " + tenant);
-            AsyncStorage.setItem("tenant", tenant.toString())
-              .then(() => {
-                AsyncStorage.getItem("tenant").then((value) => {
-                  console.log("new tenant: " + tenant);
-                });
-                thisSetTenant(tenant);
-                router.replace("/");
-              })
-              .catch((error) => {
-                console.log(error);
-              });
-          },
-        }}
-      >
-        <UserContext.Provider
+      <NotificationRefreshProvider>
+        <TenantContext.Provider
           value={{
-            user: thisUser,
-            setUser: (user) => {
-              thisSetUser(user);
+            tenant: thisTenant,
+            setTenant: (tenant) => {
+              if (tenant === thisTenant) {
+                return;
+              }
+              console.log("Setting tenant: " + tenant);
+              AsyncStorage.setItem("tenant", tenant.toString())
+                .then(() => {
+                  AsyncStorage.getItem("tenant").then((value) => {
+                    console.log("new tenant: " + tenant);
+                  });
+                  thisSetTenant(tenant);
+                  router.replace("/");
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
             },
           }}
         >
-          <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-          <Stack
-            initialRouteName="index"
-            screenOptions={{ headerTitle: "Home" }}
+          <UserContext.Provider
+            value={{
+              user: thisUser,
+              setUser: (user) => {
+                thisSetUser(user);
+              },
+            }}
           >
-            <Stack.Screen
-              name="/routes/rental-details"
-              options={{ headerTitle: "Details" }}
-            />
-            <Stack.Screen
-              name="sign-in"
-              options={{ headerTitle: "Connection" }}
-            />
-            <Stack.Screen
-              name="me/stripe-return"
-              options={{ headerTitle: "Stripe" }}
-            />
-            <Stack.Screen
-              name="me/stripe-refresh"
-              options={{ title: "Stripe" }}
-            />
-            <Stack.Screen
-              name="select-tenant"
-              options={{ title: "Select Tenant" }}
-            />
-            <Stack.Screen name="brands/[id]" options={{ title: "Espaces" }} />
-          </Stack>
-          <PortalHost />
-        </UserContext.Provider>
-      </TenantContext.Provider>
+            <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+            <Stack
+              initialRouteName="index"
+              screenOptions={{ headerTitle: "Home" }}
+            >
+              <Stack.Screen
+                name="/routes/rental-details"
+                options={{ headerTitle: "Details" }}
+              />
+              <Stack.Screen
+                name="routes/pending-reservations"
+                options={{ headerTitle: "Notifications" }}
+              />
+              <Stack.Screen
+                name="sign-in"
+                options={{ headerTitle: "Connection" }}
+              />
+              <Stack.Screen
+                name="me/stripe-return"
+                options={{ headerTitle: "Stripe" }}
+              />
+              <Stack.Screen
+                name="me/stripe-refresh"
+                options={{ title: "Stripe" }}
+              />
+              <Stack.Screen
+                name="select-tenant"
+                options={{ title: "Select Tenant" }}
+              />
+              <Stack.Screen name="brands/[id]" options={{ title: "Espaces" }} />
+            </Stack>
+            <PortalHost />
+          </UserContext.Provider>
+        </TenantContext.Provider>
+      </NotificationRefreshProvider>
     </ThemeProvider>
   );
-}
+});

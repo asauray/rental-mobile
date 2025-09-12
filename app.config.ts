@@ -14,7 +14,7 @@ let rootConfig: ExpoConfig = {
     backgroundColor: "#000",
   },
   ios: {
-    buildNumber: "1.0.0",
+    buildNumber: "1.0",
     entitlements: {
       "aps-environment": "production",
     },
@@ -25,6 +25,9 @@ let rootConfig: ExpoConfig = {
     bundleIdentifier: "net.sauray.booking.cowork",
     associatedDomains: ["applinks:api.boncowork.com", "applinks:boncowork.com"],
     googleServicesFile: "./GoogleService-Info.plist",
+    infoPlist: {
+      CFBundleVersion: "1.0",
+    },
   },
   android: {
     adaptiveIcon: {
@@ -53,6 +56,24 @@ let rootConfig: ExpoConfig = {
       },
     ],
     "expo-font",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/images/favicon.png",
+        color: "#ffffff",
+        defaultChannel: "default",
+        sounds: [],
+        enableBackgroundRemoteNotifications: true,
+      },
+    ],
+    [
+      "@sentry/react-native/expo",
+      {
+        url: "https://sentry.io/",
+        project: "boncowork-mobile",
+        organization: "antoine-sauray",
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
@@ -73,7 +94,7 @@ if (process.env.ENVIRONMENT === "prod") {
     eas: {
       projectId: "c3006282-3bc0-4b89-a3bb-64e9c4413d1f",
     },
-    apiRootUrl: "http://192.168.1.25:8080",
+    apiRootUrl: "http://192.168.1.14:8080",
   };
 } else {
   throw new Error(

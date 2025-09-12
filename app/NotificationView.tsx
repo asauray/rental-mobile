@@ -5,6 +5,7 @@ import { Alert, FlatList, RefreshControl, View } from "react-native";
 import { Skeleton } from "@/components/ui/skeleton";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { H4, P } from "@/components/ui/typography";
+import { useNotificationRefresh } from "./hooks/NotificationRefreshContext";
 import {
   Card,
   CardContent,
@@ -29,6 +30,7 @@ export const NotificationsView = ({
   const [reservations, setReservations] = React.useState<
     Reservations | undefined
   >(undefined);
+  const { refreshTrigger } = useNotificationRefresh();
 
   const reloadData = () => {
     setRefreshing(true);
@@ -44,6 +46,7 @@ export const NotificationsView = ({
         () => auth().signOut()
       )
         .then((newReservations) => {
+          console.log('NotificationsView: fetched reservations:', newReservations?.bookings_grouped_by_day?.length || 0, 'groups');
           setReservations(newReservations);
           setRefreshing(false);
         })
@@ -54,8 +57,9 @@ export const NotificationsView = ({
   };
 
   React.useEffect(() => {
+    console.log('NotificationsView: refreshTrigger changed:', refreshTrigger);
     reloadData();
-  }, []);
+  }, [refreshTrigger]); // Now responds to refresh triggers from notifications
 
   const data = reservations?.bookings_grouped_by_day || [];
 
@@ -112,7 +116,7 @@ export const NotificationsView = ({
               unit && (
                 <View key={r.id}>
                   <CardDescription>
-                    <P>{r.formatted_price}</P>
+                    <P>{r.model} - {r.formatted_price}</P>
                   </CardDescription>
                   <CardDescription>
                     <P>{dayjs(r.start_date).format("DD MMMM H:mm")}</P>

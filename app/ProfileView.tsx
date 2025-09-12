@@ -42,6 +42,8 @@ export const ProfileView = ({ tenant, user }: ProfileViewProps) => {
     );
   }, []);
 
+  const [stripeDashboardButtonProgress, setStripeDashboardButtonProgress] =
+    useState(false);
   const [stripeButtonProgress, setStripeButtonProgress] = useState(false);
 
   const displayCreateBrandButton = false;
@@ -49,17 +51,6 @@ export const ProfileView = ({ tenant, user }: ProfileViewProps) => {
   return (
     <ScrollView>
       <View className="p-4 gap-4 h-full flex justify-between items-center">
-        <Card>
-          <CardHeader className="p-4 flex justify-between items-center">
-            <CardTitle>{user.email}</CardTitle>
-            <Image
-              defaultSource={require("~/assets/images/avatar-placeholder.jpg")}
-              style={styles.profilePicture}
-              src={user.photoURL || undefined}
-            />
-          </CardHeader>
-        </Card>
-
         <SelectTenantView user={user} />
         <Card className="w-full">
           <CardHeader className="p-4 flex justify-between items-start">
@@ -100,6 +91,28 @@ export const ProfileView = ({ tenant, user }: ProfileViewProps) => {
         <Button
           className="w-full"
           onPress={() => {
+            setStripeDashboardButtonProgress(true);
+            RentalApi.loginDasboard(user, tenant, () => auth().signOut())
+              .then(async (response) => {
+                const url = response.url;
+                let result = await WebBrowser.openAuthSessionAsync(url);
+                setStripeDashboardButtonProgress(false);
+              })
+              .catch((err) => {
+                setStripeDashboardButtonProgress(false);
+              });
+          }}
+        >
+          {stripeButtonProgress ? (
+            <ActivityIndicator />
+          ) : (
+            <Text>Dashboard</Text>
+          )}
+        </Button>
+        <Button
+          className="w-full"
+          variant="outline"
+          onPress={() => {
             setStripeButtonProgress(true);
             RentalApi.setupStripeAccount(user, tenant, () => auth().signOut())
               .then(async (response) => {
@@ -121,6 +134,7 @@ export const ProfileView = ({ tenant, user }: ProfileViewProps) => {
 
         <Button
           className="w-full"
+          variant="outline"
           onPress={() => {
             auth().signOut();
           }}
